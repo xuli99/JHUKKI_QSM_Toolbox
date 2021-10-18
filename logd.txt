@@ -1,0 +1,27 @@
+Run default parameters setting script: ParamsSetting_cluster.m and log to logd.txt
+Loading previouly saved parameters ... 
+FOR DEFAULT PARAMETERS REMOVE THE  QSM_ConstantsSaved.mat  FILE 
+cluster version.
+
+Data 1: D:\myWork\data\exampledata\001\001.par 
+Dimensions:  224 x 224 x 140 px
+Voxel size:  1 x 1 x 1 mm
+Echoes:  6
+Dynamics:  1
+TE's: 6 - 36 ms  (delta-TE: 6 ms)
+Loading previously unwrapped phase......Done. 
+Loading previously created mask......Done. 
+Loading previously LBV+SHARP avg calculated field......Done. 
+Loading previously SFCR calculated QSM......Done. 
+
+Data 2: D:\myWork\data\exampledata\002\002.par 
+Dimensions:  224 x 224 x 140 px
+Voxel size:  1 x 1 x 1 mm
+Echoes:  6
+Dynamics:  1
+TE's: 6 - 36 ms  (delta-TE: 6 ms)
+Loading previously unwrapped phase......Done. 
+Loading previously created mask......Done. 
+Loading previously LBV+SHARP avg calculated field......Done. 
+Loading previously SFCR calculated QSM......Done. 
+QSM_script processing completed.
