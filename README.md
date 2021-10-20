@@ -5,7 +5,7 @@
 *************************************************************
 Previous public version:
 JHUKKI_QSMToolbox_v3.0 is available @ http://godzilla.kennedykrieger.org/QSM/
-with some example 3T data and a basica manual
+with some example 3T data and a basic manual
 
 
 JHU/KKI_QSM_Toolbox is a MATLAB software with GUI for doing Quantitative Susceptibility Mapping (QSM) processing from MR phase data acquired with gradient echo sequence (GRE). Command line version without GUI was added after version 3.3.
@@ -33,7 +33,7 @@ c. EnhancedDICOM (Philips)
 
 d. .mat (MATLAB, customized, check "readerwrapper.m" under /QSM_Utilily/fileIO/)
 
-e. Bruker 2dseq data
+e. Bruker 2dseq data (not fully tested)
 
 Output file format
 a. internal/final results are saved in MATLAB native format (.mat)
