@@ -23,7 +23,10 @@ disp(logtxt);
 
 % Add modules
 FilePath = fileparts(mfilename('fullpath'));
-addpath(genpath(FilePath));
+addpath(FilePath);
+addpath(genpath(fullfile(FilePath, 'QSM_Modules')));
+addpath(genpath(fullfile(FilePath, 'QSM_NIFTI')));
+addpath(genpath(fullfile(FilePath, 'QSM_Utility')));
 
 % Start logging
 writelog(logfile, [logtxt, '\n'], 'w');     % discard previous logs

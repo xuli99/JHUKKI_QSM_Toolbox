@@ -34,7 +34,7 @@ if(exist(handles.Params.QSMSettingsFile, 'file') == 2 )
     handles.Params.saveOutput       = Params.saveOutput;
     handles.Params.B0               = Params.B0;
     
-    handles.Params.FSLFolder        = Params.FSLFolder;
+    handles.Params.FSLFolder        = fullfile(fsldir, 'bin/'); % system dependent
     handles.Params.FSLThreshold     = Params.FSLThreshold;
     
     handles.Params.EchoAvg          = Params.EchoAvg;
