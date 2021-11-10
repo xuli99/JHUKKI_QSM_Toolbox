@@ -27,7 +27,7 @@ check makeTable.m for a Table making template
 Supported input file format
 a. PAR/REC (Philips v4.2 and above)
 
-b. DICOM (Philips/GE/Siemens/Canon)
+b. DICOM (It may work for Philips/GE/Siemens/Canon data, but not fully tested. For DICOM files, the GRE Magnitude and Phase data should be sorted first into a seperate folder. This can be done using 3rd party DICOM packages, e.g. Horos) 
 
 c. EnhancedDICOM (Philips) 
 

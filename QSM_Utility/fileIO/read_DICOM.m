@@ -37,6 +37,7 @@ function [GREPhase, GREMag,Params] = read_DICOM(DICOMdir, Params, verbose)
 % Updated 2021-04-03, used fullfile
 % Updated 2021-04-26, fixed in case no tag on EchoNumber(s)
 % Updated 2021-06-26, add update for cluster version
+% Updated 2021-10-28, for reverse slice stack condition, making TAng always R.H.S.
 
 if nargin < 1
     % uigetdir get the DICOMdir
@@ -201,6 +202,11 @@ else
     Params.sizeVol(3) = round(norm(maxLoc - minLoc)/Params.voxSize(3)) + 1;
 end
 
+slicenorm = (maxLoc - minLoc)/(Params.sizeVol(3)-1);
+if dot(Params.TAng(:,3), slicenorm) < 0  % needed to reverse slice stack
+    reverse_flag = 1;
+end
+
 %% read in imaging data
 if Manufacturer ~= 3   % for SIEMENS or PHILIPS or TOSHIBA, can read in Mag & Phase directly
     GREPhase = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
@@ -306,6 +312,12 @@ end
 if Manufacturer == 4        % TOSHIBA data is flipped?
     GREMag = flip(GREMag, 3);
     GREPhase = flip(GREPhase, 3);
+end
+
+% reverse slice stack
+if reverse_flag == 1
+    GREMag = GREMag(:,:,end:-1:1,:,:,:);
+    GREPhase = GREPhase(:,:,end:-1:1,:,:,:);
 end
 
 % Post-process
