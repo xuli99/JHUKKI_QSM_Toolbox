@@ -38,6 +38,7 @@ function [GREPhase, GREMag,Params] = read_DICOM(DICOMdir, Params, verbose)
 % Updated 2021-04-26, fixed in case no tag on EchoNumber(s)
 % Updated 2021-06-26, add update for cluster version
 % Updated 2021-10-28, for reverse slice stack condition, making TAng always R.H.S.
+% Updated 2021-11-18, bug fix
 
 if nargin < 1
     % uigetdir get the DICOMdir
@@ -203,6 +204,8 @@ else
 end
 
 slicenorm = (maxLoc - minLoc)/(Params.sizeVol(3)-1);
+
+reverse_flag = 0;
 if dot(Params.TAng(:,3), slicenorm) < 0  % needed to reverse slice stack
     reverse_flag = 1;
 end
