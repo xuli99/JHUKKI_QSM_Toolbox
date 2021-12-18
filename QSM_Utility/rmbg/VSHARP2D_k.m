@@ -15,6 +15,7 @@ function [phase_local, background, mask_eval] = VSHARP2D_k(GREPhaseSE, BrainMask
 % 2D version based on 2D SMV
 % updated 2019-07-09
 % Updated 2021-06-27 X.L., cluster version
+% Updated 2021-12-10 X.L., bug fix
 
 warning off all
 
@@ -31,7 +32,12 @@ else
 end
 
 % Cut only what we want
-GREPhaseData = GREPhaseSE(:,:,:,Params.echoNums);
+if max(Params.echoNums) < size(GREPhaseSE, 4)
+    GREPhaseData = GREPhaseSE(:,:,:,Params.echoNums);                   % bug fix 2021
+else
+    GREPhaseData = GREPhaseSE;
+end
+
 phase_local = zeros(size(GREPhaseData), class(GREPhaseData));       % final output
 
 % Create k-space kernel with different radius, 2D 
