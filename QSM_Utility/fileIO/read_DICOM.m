@@ -37,8 +37,9 @@ function [GREPhase, GREMag,Params] = read_DICOM(DICOMdir, Params, verbose)
 % Updated 2021-04-03, used fullfile
 % Updated 2021-04-26, fixed in case no tag on EchoNumber(s)
 % Updated 2021-06-26, add update for cluster version
-% Updated 2021-10-28, for reverse slice stack condition, making TAng always R.H.S.
+% Updated 2021-10-28, for reverse slice stack condition, making TAng always R.H.S. (LPS)
 % Updated 2021-11-18, bug fix
+% Updated 2022-03-23, X.L. added option to use RAS NIFTI
 
 if nargin < 1
     % uigetdir get the DICOMdir
@@ -110,11 +111,11 @@ catch
 end
 
 % basic information
-Params.sizeVol(1) = single(info.Width);
-Params.sizeVol(2) = single(info.Height);
+Params.sizeVol(1) = single(info.Width);                 % columns
+Params.sizeVol(2) = single(info.Height);                % rows
 
-Params.voxSize(1) = single(info.PixelSpacing(1));       % mm
-Params.voxSize(2) = single(info.PixelSpacing(2));
+Params.voxSize(1) = single(info.PixelSpacing(2));       % mm, column spacing
+Params.voxSize(2) = single(info.PixelSpacing(1));       % row spacing
 Params.voxSize(3) = single(info.SliceThickness);        % mm
 
 % CF = info.ImagingFrequency*1e6;                    % central frequency, Hz
@@ -208,6 +209,58 @@ slicenorm = (maxLoc - minLoc)/(Params.sizeVol(3)-1);
 reverse_flag = 0;
 if dot(Params.TAng(:,3), slicenorm) < 0  % needed to reverse slice stack
     reverse_flag = 1;
+end
+
+% % ----- NIFTI affine and hdr, tested for SIEMENS data only
+if Manufacturer == 1
+    testmat = abs(Params.TAng);
+    [~, ixyz] = max(testmat);
+    if ixyz(2) == ixyz(1), testmat(ixyz(2), 2) = 0; [~, ixyz(2)] = max(testmat(:,2)); end
+    if any(ixyz(3) == ixyz(1:2)), ixyz(3) = setdiff(1:3, ixyz(1:2)); end
+    
+    pixdim = Params.voxSize;
+    dim = Params.sizeVol;
+    R = [Params.TAng * diag(pixdim) minLoc];
+    R(:,3) = slicenorm;
+    R(1:2,:) = -R(1:2, :);
+    
+    flp = R(ixyz+[0 3 6])<0; % flip an axis if true
+    d = det(R(:,1:3)) * prod(1-flp*2); % det after all 3 axis positive
+    if d<0
+       flp(1) = ~flp(1);    % right storage
+    end
+    rotM = diag([1-flp*2 1]); % 1 or -1 on diagnal
+    rotM(1:3, 4) = (dim-1) .* flp; % 0 or dim-1
+    R = R / rotM; % xform matrix after flip
+    img_affine = eye(4); 
+    img_affine(1:3,:) = R;
+
+    img_data = zeros(dim,'single');
+    nii = nii_tool('init', img_data);
+    nii = nii_tool('update', nii, img_affine); % update only sform
+    nii.hdr.sform_code = 1;
+    nii.hdr.pixdim(:) = 1;
+    nii.hdr.pixdim(2:4) = pixdim; 
+
+    % from dicm2nii
+    R0 = normc(R(:, 1:3)); iSL=3;
+    sNorm = null(R0(:, setdiff(1:3, iSL))');
+    if sign(sNorm(ixyz(iSL))) ~= sign(R(ixyz(iSL),iSL)), sNorm = -sNorm; end
+    R0(:,iSL) = sNorm;
+
+    % qform
+    nii.hdr.qform_code = 1;
+    nii.hdr.qoffset_x = R(1,4);
+    nii.hdr.qoffset_y = R(2,4);
+    nii.hdr.qoffset_z = R(3,4);
+    [q, nii.hdr.pixdim(1)] = dcm2quat(R0); % 3x3 dir cos matrix to quaternion
+    nii.hdr.quatern_b = q(2);
+    nii.hdr.quatern_c = q(3);
+    nii.hdr.quatern_d = q(4);
+
+    Params.nifti_affine  = img_affine;
+    Params.nifti_flp     = flp;
+    Params.nifti_hdr     = nii.hdr;
 end
 
 %% read in imaging data
@@ -345,3 +398,42 @@ if vcos > 0.7
     end
 end
 % data in 6D array, ncol, nrow, nslice, necho, ndyanmics, ncoil
+
+
+%% Subfunctions from dicm2nii, Convert 3x3 direction cosine matrix to quaternion
+% Simplied from Quaternions by Przemyslaw Baranski 
+function [q, proper] = dcm2quat(R)
+% [q, proper] = dcm2quat(R)
+% Retrun quaternion abcd from normalized matrix R (3x3)
+proper = sign(det(R));
+if proper<0, R(:,3) = -R(:,3); end
+
+q = sqrt([1 1 1; 1 -1 -1; -1 1 -1; -1 -1 1] * diag(R) + 1) / 2;
+if ~isreal(q(1)), q(1) = 0; end % if trace(R)+1<0, zero it
+[mx, ind] = max(q);
+mx = mx * 4;
+
+if ind == 1
+    q(2) = (R(3,2) - R(2,3)) /mx;
+    q(3) = (R(1,3) - R(3,1)) /mx;
+    q(4) = (R(2,1) - R(1,2)) /mx;
+elseif ind ==  2
+    q(1) = (R(3,2) - R(2,3)) /mx;
+    q(3) = (R(1,2) + R(2,1)) /mx;
+    q(4) = (R(3,1) + R(1,3)) /mx;
+elseif ind == 3
+    q(1) = (R(1,3) - R(3,1)) /mx;
+    q(2) = (R(1,2) + R(2,1)) /mx;
+    q(4) = (R(2,3) + R(3,2)) /mx;
+elseif ind == 4
+    q(1) = (R(2,1) - R(1,2)) /mx;
+    q(2) = (R(3,1) + R(1,3)) /mx;
+    q(3) = (R(2,3) + R(3,2)) /mx;
+end
+if q(1)<0, q = -q; end % as MRICron
+
+%% 
+function v = normc(M)
+vn = sqrt(sum(M .^ 2)); % vn = vecnorm(M);
+vn(vn==0) = 1;
+v = bsxfun(@rdivide, M, vn);

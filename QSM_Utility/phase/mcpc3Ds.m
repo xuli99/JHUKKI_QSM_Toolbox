@@ -13,6 +13,7 @@ function [GREPhase, GREMag] = mcpc3Ds(GREMag, GREPhase, Params)
 % if data in 8D array, Bruker format: dim1 dim2 dim3 Echo Slice Cycle Repetition Channel,
 % output GREPhase, GREMag are 6D array
 % Updated 2021-09-23
+% Updated 2022-03-23, X.L., updated smoothing kernel
 
 sizedim = size(GREPhase);
 if ndims(GREPhase) == 8
@@ -80,8 +81,8 @@ for IndDyn = 1:Nd
    for IndChannel = 1:Nc
         temp = GREMag(:,:,:,1,IndDyn,IndChannel).*exp(1i*Phi0(:,:,:,1,IndDyn,IndChannel));
         
-        Phi0(:,:,:,1,IndDyn,IndChannel) = angle(smooth3(real(temp), 'gaussian') + ...
-                                1i*smooth3(imag(temp), 'gaussian'));     % smooth3 (default box3) or medfilt3
+        Phi0(:,:,:,1,IndDyn,IndChannel) = angle(smooth3(real(temp), 'gaussian', 5, 3) + ...
+                                1i*smooth3(imag(temp), 'gaussian', 5, 3));     % smooth3 (default box3) or medfilt3
 
         if ~isfield(Params, 'cluster')
             multiWaitbar(textWaitbar, 0.5+(Ni/Nall)*0.4);

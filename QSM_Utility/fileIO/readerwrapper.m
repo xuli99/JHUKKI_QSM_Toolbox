@@ -13,6 +13,7 @@ function [GREMag, GREPhase, Params, handles] = readerwrapper(PathName, FileName,
 % updated 2021-03-11, updated for 2D Bruker data
 % updated 2021-06-28, cluster version
 % updated 2021-09-24, added mcpc-3d-s for multi-echo coil combination
+% updated 2022-03-22, added option to load NIFTI hdr from .mat & DICOM (dicm2nii)
 
 [~,FileBaseName,FileExt] = fileparts(FileName);
 
@@ -84,6 +85,7 @@ elseif(sum(strcmpi(FileExt,{'.DIC';'.IMA';'.DICOM'; '.dcm'; '.1'; ''})) > 0) && 
         disp('Doing coil combination.')
         % Coil combination for PHASE VRC
         if Params.nEchoes > 1 
+            % GREPhase = mcpcVRC(GREMag, GREPhase, Params);         % VRC
             [GREPhase, GREMag] = mcpc3Ds(GREMag, GREPhase, Params); % MCPC-3D-S
         else
             GREPhase = mcpcVRC(GREMag, GREPhase, Params);    % Multi-channel phase combination, VRC
@@ -224,6 +226,14 @@ elseif (strcmpi(FileExt,'.mat'))
     if isfield(S.Params, 'SliceOriSave')
         Params.SliceOriSave = S.Params.SliceOriSave;
     end
+
+    if isfield(S.Params, 'nifti_hdr')
+        % check read_DICOM.m and read_DICOM.py
+        Params.nifti_hdr = S.Params.nifti_hdr;
+        Params.nifti_flp = S.Params.nifti_flp;
+        Params.nifti_affine = S.Params.nifti_affine;
+    end
+
 else
     error('Sorry, we can not open this type of file...');
 end

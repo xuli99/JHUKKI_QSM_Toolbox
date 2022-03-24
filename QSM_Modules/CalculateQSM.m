@@ -10,6 +10,7 @@
 % Updated 2021-08-03 X.L., add extra phase reliability mask
 % Updated 2021-08-20, X.L., bug fix for dyanmic data
 % Updated 2021-09-12, X.L., bug fix for padding in SFCR
+% Updated 2022-03-22, X.L. added option to use RAS NIFTI
 
 %% Get variables
 Params      = handles.Params;
@@ -63,7 +64,14 @@ if Params.R2starFlag == 1
             BrainMaskFilename = [fname1, '_brain_mask.nii.gz'];
         end
         
-        nii = load_untouch_nii(BrainMaskFilename);      
+        nii = load_untouch_nii(BrainMaskFilename);  
+        % for RAS NIFTI
+        if isfield(Params, 'nifti_flp')
+            img_data = nii.img;
+            for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
+            nii.img = img_data;
+        end
+
         maskBET = permute(nii.img, [2,1,3]);            
         maskBET = maskBET > 0;
         
@@ -194,6 +202,13 @@ if Params.AutoRefFlag == 1
     if GREMagSegFileFlag == 1
         disp('GREMagSeg file exists.')
         nii = load_untouch_nii(GREMagSegFileTarget);
+        % for RAS NIFTI
+        if isfield(Params, 'nifti_flp')
+            img_data = nii.img;
+            for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
+            nii.img = img_data;
+        end
+        
         GREMagSeg = permute(nii.img, [2,1,3]);   
     end
 end

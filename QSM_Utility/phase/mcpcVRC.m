@@ -17,6 +17,7 @@ function [GREPhase, GREMag] = mcpcVRC(GREMag, GREPhase, Params)
 % if data in 6D array, ncol, nrow, nslice, necho, ndyanmics, ncoil
 % if data in 8D array, dim1 dim2 dim3 Echo Slice Cycle Repetition Channel
 % Updated 2021-06-26, add update for cluster version
+% Updated 2022-03-23, X.L., updated smoothing kernel
 
 sizedim = size(GREPhase);
 if ndims(GREPhase) == 8
@@ -90,7 +91,10 @@ Ni = 1;
 for IndDyn = 1:Nd
     for IndEcho = 1:Ne
        for IndChannel = 1:Nc
-            PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel) = smooth3(PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel));     % smooth3 (default box3) or medfilt3
+
+            temp = exp(1i.*PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel));
+
+            PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel) = angle(smooth3(real(temp), 'gaussian', 5, 3) + 1i*smooth3(imag(temp), 'gaussian', 5, 3));   
             % PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel) = medfilt3(PhaseDiff(:,:,:,IndEcho,IndDyn,IndChannel));     % smooth3 or medfilt3
             if ~isfield(Params, 'cluster')
                 multiWaitbar(textWaitbar, 0.5+(Ni/Nall)*0.4);

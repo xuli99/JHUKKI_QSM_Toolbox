@@ -7,6 +7,7 @@
 % Updated 2021-06-28 X.L., cluster version
 % Updated 2021-07-08 X.L.
 % Updated 2021-08-05 X.L., added unreliable phase mask2
+% Updated 2022-03-22, X.L. added option to use RAS NIFTI
 
 %% Get variables
 Params      = handles.Params;
@@ -92,7 +93,14 @@ else
                 return;
             end
 
-            nii = load_untouch_nii(output);             
+            nii = load_untouch_nii(output); 
+            % for RAS NIFTI
+            if isfield(Params, 'nifti_flp')
+                img_data = nii.img;
+                for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
+                nii.img = img_data;
+            end
+
             maskBET1 = permute(nii.img, [2,1,3]);       
             maskBET1 = maskBET1 > 0;
             maskErode = maskBET1;
@@ -114,6 +122,13 @@ else
                 output = [fname2, '_brain_mask.nii.gz'];
 
                 nii = load_untouch_nii(output);
+                % for RAS NIFTI
+                if isfield(Params, 'nifti_flp')
+                    img_data = nii.img;
+                    for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
+                    nii.img = img_data;
+                end
+
                 maskBET2 = permute(nii.img, [2,1,3]);
                 maskBET2 = maskBET2 > 0;
 
@@ -132,7 +147,8 @@ else
             
 %             % Hacking mask with Animal data
 %             fname2 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1)), '_Manual'];
-%             nii = load_untouch_nii([fname2, '.nii.gz']);
+%             nii = load_untouch_nii([fname2, '.nii.gz']); 
+%             % may need to check RAS NIFTI
 %             maskErode = permute(nii.img, [2,1,3]); maskErode=maskErode>0;            
                         
             % MaskOut Unreliable Phase

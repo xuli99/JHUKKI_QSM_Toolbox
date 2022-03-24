@@ -7,6 +7,7 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     % 2019-06-05, included .nii.gz and prec, X.L.
     % 2020-04-07, updated sliceOri option for saving saggital images
     % 2021-01-01, added SliceOriSave
+    % 2022-03-22, added option to use loaded NIFTI hdr from DICOM (dicm2nii)
     
     if nargin < 4
         permuteflag = 1;        % default setting, compatible with old version
@@ -34,31 +35,57 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     
     if strcmpi(ext, '.nii') || strcmpi(ext, '.nii.gz')
         nii = make_nii(saveVar, Params.voxSize, [], prec);       % single, float 32
-        % save as nifti
-        switch Params.sliceOri
-            case 1
-                nii.hdr.hist.qform_code = 1;
-                nii.hdr.hist.sform_code = 0;
-                nii.hdr.hist.quatern_b = 0;
-                nii.hdr.hist.quatern_c = 0;
-                nii.hdr.hist.quatern_d = 1;        
-            case 2
-                nii.hdr.hist.qform_code = 1;
-                nii.hdr.hist.sform_code = 0;
-                nii.hdr.hist.quatern_b = -0.5;
-                nii.hdr.hist.quatern_c = 0.5;
-                nii.hdr.hist.quatern_d = -0.5;  
-            case 3
-                nii.hdr.hist.qform_code = 1;
-                nii.hdr.hist.sform_code = 0;
-                nii.hdr.hist.quatern_b =  0;
-                nii.hdr.hist.quatern_c = 0.7071;
-                nii.hdr.hist.quatern_d = -0.7071;  
-                % nii.hdr.hist.qoffest_x = 0;   % may need to change
-            otherwise
-                disp('unknow slice orientation')
+
+        % if Params has saved nifti_hdr 
+        if isfield(Params, 'nifti_hdr')
+            % check dim
+            % nii = nii_tool('init', saveVar);
+            % if nii.hdr.dim == Params.nifti_hdr.dim
+            if nii.hdr.dime.dim == Params.nifti_hdr.dim
+                % flip if needed.
+                if isfield(Params, 'nifti_flp')
+                    img_data = nii.img;
+                    for k = 1:3
+                        if Params.nifti_flp(k), img_data = flip(img_data, k); end
+                    end
+                    nii.img = img_data;
+                end
+                nii.hdr = hdr_update(nii.hdr, Params.nifti_hdr);
+
+                % nii_tool('save', nii, [fileName, ext])
+            else
+                error('data dimension does not match saved NIFTI header.')
+            end
+
+        else
+            % save as nifti without PatientPosition
+            switch Params.sliceOri
+                case 1
+                    nii.hdr.hist.qform_code = 1;
+                    nii.hdr.hist.sform_code = 0;
+                    nii.hdr.hist.quatern_b = 0;
+                    nii.hdr.hist.quatern_c = 0;
+                    nii.hdr.hist.quatern_d = 1;        
+                case 2
+                    nii.hdr.hist.qform_code = 1;
+                    nii.hdr.hist.sform_code = 0;
+                    nii.hdr.hist.quatern_b = -0.5;
+                    nii.hdr.hist.quatern_c = 0.5;
+                    nii.hdr.hist.quatern_d = -0.5;  
+                case 3
+                    nii.hdr.hist.qform_code = 1;
+                    nii.hdr.hist.sform_code = 0;
+                    nii.hdr.hist.quatern_b =  0;
+                    nii.hdr.hist.quatern_c = 0.7071;
+                    nii.hdr.hist.quatern_d = -0.7071;  
+                    % nii.hdr.hist.qoffest_x = 0;   % may need to change
+                otherwise
+                    disp('unknow slice orientation')
+            end
         end
+
         save_nii(nii, [fileName, ext]);
+
     else
         % save as analyze
         nii = make_nii(flip(saveVar, 2), Params.voxSize, [], prec);
@@ -66,5 +93,28 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     end
     
     clear nii
+
+    function hdr = hdr_update(hdr, new_hdr)
+        if isfield(hdr, 'dime')
+            % multi-layer way
+            hdr.dime.pixdim = new_hdr.pixdim; hdr.dime.vox_offset = new_hdr.vox_offset;
+            hdr.hist.qform_code = new_hdr.qform_code;
+            hdr.hist.sform_code = new_hdr.sform_code;
+            hdr.hist.quatern_b = new_hdr.quatern_b; hdr.hist.quatern_c = new_hdr.quatern_c; hdr.hist.quatern_d = new_hdr.quatern_d;
+            hdr.hist.qoffset_x = new_hdr.qoffset_x; hdr.hist.qoffset_y = new_hdr.qoffset_y; hdr.hist.qoffset_z = new_hdr.qoffset_z;
+            hdr.hist.srow_x = new_hdr.srow_x; hdr.hist.srow_y = new_hdr.srow_y; hdr.hist.srow_z = new_hdr.srow_z;
+            hdr.hist.magic = new_hdr.magic;            
+        else
+            % single-layer way
+            hdr.pixdim = new_hdr.pixdim; hdr.vox_offset = new_hdr.vox_offset;
+            hdr.qform_code = new_hdr.qform_code;
+            hdr.sform_code = new_hdr.sform_code;
+            hdr.quatern_b = new_hdr.quatern_b; hdr.quatern_c = new_hdr.quatern_c; hdr.quatern_d = new_hdr.quatern_d;
+            hdr.qoffset_x = new_hdr.qoffset_x; hdr.qoffset_y = new_hdr.qoffset_y; hdr.qoffset_z = new_hdr.qoffset_z;
+            hdr.srow_x = new_hdr.srow_x; hdr.srow_y = new_hdr.srow_y; hdr.srow_z = new_hdr.srow_z;
+            hdr.magic = new_hdr.magic;
+        end
+    end
+
 end
 
