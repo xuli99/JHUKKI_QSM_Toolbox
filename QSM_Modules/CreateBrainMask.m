@@ -8,6 +8,7 @@
 % Updated 2021-07-08 X.L.
 % Updated 2021-08-05 X.L., added unreliable phase mask2
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
+% Updated 2022-05-03, X.L., added switch for compatibility with some old mask options
 
 %% Get variables
 Params      = handles.Params;
@@ -193,11 +194,15 @@ else
                         mask_unrelyPhase = mask_unrelyPhase | (tempMask ~= 10);                    
                     end
 
-%                     %%% ----- hacking mask 1, to remove more unreliable phase
-%                     [~, echoNumPickhk] = min(abs(Params.TEs - 30e-3)); 
-%                     unrelyPhaseThresh = pi/2;               % empirical number, pi/2
-%                     mask_unrelyPhase = mask_unrelyPhase | create_mask_unrelyPhase(GREPhase(:,:,:,echoNumPickhk,1), unrelyPhaseThresh, maskErode);  
-%                     %%% ------------------
+                    if isfield(Params, 'maskHs')
+                        if Params.maskHs == 1
+                            %%% ----- hacking mask 1, to remove more unreliable phase
+                            [~, echoNumPickhk] = min(abs(Params.TEs - 30e-3)); 
+                            unrelyPhaseThresh = pi/2;               % empirical number, pi/2
+                            mask_unrelyPhase = mask_unrelyPhase | create_mask_unrelyPhase(GREPhase(:,:,:,echoNumPickhk,1), unrelyPhaseThresh, maskErode);  
+                            %%% ------------------
+                        end
+                    end
 
                 case 'Laplacian' % Laplacian based
                     % if using iRSHARP can keep the original BET mask
@@ -249,18 +254,24 @@ else
             maskErode = imerode3dslice(maskErode, strel('disk', 1));
             maskErode = imdilate3dslice(maskErode, strel('disk', 1)); 
 
-%             % for hacking mask 1, can skip imfill3
-%             % maskErode(:,:,1:floor(0.7*size(maskErode, 3))) = imfill3(maskErode(:,:,1:floor(0.7*size(maskErode, 3))));            
-%             maskErode(floor(0.3*size(maskErode, 1)):end,:,1:floor(0.7*size(maskErode, 3))) = ...
-%                         imfill3(maskErode(floor(0.3*size(maskErode, 1)):end,:,1:floor(0.7*size(maskErode, 3))));            
-            
-            maskErode = imfill3(maskErode);             
+            if ~isfield(Params, 'maskHs')
+                maskErode = imfill3(maskErode);  
 
-    %         % For hacking mask 2, do two imfill3, for hemarrage patients
-    %         maskErode = imfill3(maskErode);   
-    %         maskErode = imdilate3dslice(maskErode, strel('disk', 1));
-    %         maskErode = imfill3(maskErode);   
-    %         maskErode = imerode3dslice(maskErode, strel('disk', 1));
+            elseif Params.maskHs == 1
+                % for hacking mask 1
+                maskErode(floor(0.3*size(maskErode, 1)):end,:,1:floor(0.7*size(maskErode, 3))) = ...
+                            imfill3(maskErode(floor(0.3*size(maskErode, 1)):end,:,1:floor(0.7*size(maskErode, 3))));            
+           
+            elseif Params.maskHs == 2
+                % For hacking mask 2, do two imfill3, for hemarrage
+                % patients? add two-pass option?
+                maskErode = imfill3(maskErode);   
+                maskErode = imdilate3dslice(maskErode, strel('disk', 1));
+                maskErode = imfill3(maskErode);   
+                maskErode = imerode3dslice(maskErode, strel('disk', 1));
+            else
+                % skip imfill3
+            end
 
             disp('Done')   
             
