@@ -312,7 +312,7 @@ else
             isCorrect = false;
             while(~isCorrect)
                 % Do the first masking
-                [maskErode,~,~] = create_mask_erode(GREMag(:,:,:,Params.SaveEcho(1),1).*1, floor(Params.ErodeRadius./min(Params.voxSize)), Params.MaskThreshold);
+                [maskErode,~,~] = create_mask_erode(GREMag(:,:,:,Params.SaveEcho(1),1).*1, double(floor(Params.ErodeRadius./min(Params.voxSize))), Params.MaskThreshold);
 
                 % Show
                 if ~isfield(handles.Params, 'cluster')  % GUI only
