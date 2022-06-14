@@ -201,7 +201,6 @@ for t = 1:num_iter
             temp = z2 - yphase-1i*log(ym);
             
             update = ( mu3 .* sin(temp) + mu2*z2 - rhs_z2 )./( mu3 .* cos(temp) + mu2 +eps);   
-            % update = ( mu3 .* ym.*sin(z2 - yphase) + mu2*z2 - rhs_z2 )./( mu3 .* ym.*cos(z2 - yphase) + mu2 +eps);   
             
             z2 = z2 - update;     
             delta = norm(update(:)) / norm_old;

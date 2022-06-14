@@ -18,7 +18,7 @@ function [chi_res, chi_res_M] = delta2chi_nSFCR(deltaB, maskErode, DPWeight, nSF
 % DPWeight: normalized magnitude data, SNR weighting
 % nSFCRparams: parameters set
 %             nSFCRparams.L1orL2 = 2;             % 1 for L1 and 2 for L2
-%             nSFCRparams.nlM    = 1;             % 0 use old linear M-step, 1 use nSFCR
+%             nSFCRparams.nlM    = 1;             % 0 use old linear M-step + k-space combination, 1 use nSFCR
 %             nSFCRparams.TV     = 0;             % 0 use both M-step and F-step as in SFCR, 1 use TV and only S-step 
 %             nSFCRparams.padsize = [12, 12, 12]; 
 %             nSFCRparams.Params                  % original Params in the toolbox
@@ -135,7 +135,7 @@ function [chi_res, chi_res_M] = delta2chi_nSFCR(deltaB, maskErode, DPWeight, nSF
         chik_res = fftn(out_s.x);
         chik_M0 = fftn(out_m.x);
         inx1 = abs(nSFCRparams.D) <= nSFCRparams.kthresh - 0.05;
-        inx2 = abs(nSFCRparams.D) > nSFCRparams.kthresh + 0.05;ar
+        inx2 = abs(nSFCRparams.D) > nSFCRparams.kthresh + 0.05;
         chik_res(~inx1 & ~inx2) = 0.5*(chik_M0(~inx1 & ~inx2) + chik_res(~inx1 & ~inx2));           
         chik_res(inx2) = chik_M0(inx2);
         chi_res = real(ifftn(chik_res)).*maskErode;

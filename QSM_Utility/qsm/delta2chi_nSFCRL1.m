@@ -4,7 +4,7 @@ function out = delta2chi_nSFCRL1(params)
 % Ref: Bao et al, IEEE TMI, 2016 35(9):2040-50
 %      Chen et al, J Neurosci Res, 2019, 97:467:479
 %      Milovic, MRM, 2018, 80:814–821 (FANSI)
-%      Milovic, 2019, QSMworkshop 
+%      Milovic, MRM, 2022, 87(1):457-473 (L1-QSM)
 %      FANSI toolbox:  https://gitlab.com/cmilovic/FANSI-toolbox 
 %
 % Authors: Xu Li
@@ -147,7 +147,7 @@ tic
     x_update = 100;     % percent
 
     lm = lambda1/mu1;
-    debug = 0;
+    debug = 1;
     if debug == 1
         verbose = 1;
         cgverbose = 1;
@@ -198,15 +198,15 @@ tic
         % Newton-Raphson method
         delta = inf;
         inn = 0;        
-        yphase = angle( IS+z3-s3 );
+        yphase = angle(IS+z3-s3);
         ym = abs(IS+z3-s3);
         
         while (delta > delta_tol && inn < 50)
             inn = inn + 1;
             norm_old = norm(z2(:));
             
-            update = ( mu3 .* sin(z2 - yphase-1i*log(ym)) + mu2*z2 - rhs_z2 )./( mu3 .* cos(z2 - yphase-1i*log(ym)) + mu2 +eps);   
-            % update = ( mu3 .* ym.*sin(z2 - yphase) + mu2*z2 - rhs_z2 )./( mu3 .* ym.*cos(z2 - yphase) + mu2 +eps);   
+            % update = ( mu3 .* sin(z2 - yphase-1i*log(ym)) + mu2*z2 - rhs_z2 )./( mu3 .* cos(z2 - yphase-1i*log(ym)) + mu2 +eps);   
+            update = ( mu3 .* sin(z2 - yphase+1i*log(ym)) + mu2*z2 - rhs_z2 )./( mu3 .* cos(z2 - yphase+1i*log(ym)) + mu2 +eps);   
                   
             z2 = z2 - update;     
             delta = norm(update(:)) / norm_old;
