@@ -11,6 +11,7 @@
 % Updated 2021-08-20, X.L., bug fix for dyanmic data
 % Updated 2021-09-12, X.L., bug fix for padding in SFCR
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
+% Updated 2022-06-24, X.L. added Params check for kernel calculation
 
 %% Get variables
 Params      = handles.Params;
@@ -303,6 +304,10 @@ else
         writelog(handles.logfile, [textWaitbar, '...']);
     end
     chi_res = zeros(size(deltaB));
+    % checking Params for kernel
+    Params.fov = Params.fov(:)';
+    Params.sizeVol = Params.sizeVol(:)';
+    Params.voxSize = Params.voxSize(:)';
     
     switch Params.QSMSolverDict{Params.QSMSolver} 
         case 'iLSQR'        

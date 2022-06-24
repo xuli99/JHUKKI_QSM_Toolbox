@@ -4,7 +4,7 @@
 
 *************************************************************
 Previous public version:
-JHUKKI_QSMToolbox_v3.0 is available @ http://godzilla.kennedykrieger.org/QSM/
+JHUKKI_QSMToolbox_v3.0 is available @ https://godzilla.kennedykrieger.org/QSM/
 with some example 3T data and a basic manual
 
 

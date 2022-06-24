@@ -27,6 +27,7 @@ function [chi_res, chi_res_M] = delta2chi_nSFCR(deltaB, maskErode, DPWeight, nSF
 % 
 % Updated 2021-07-17, X.L., fixed the bug with odd dimension data (for FANSI_L1 as in M-step)
 % Updated 2021-07-31, X.L., added in TV option to use TV
+% Updated 2022-06-24, X.L., bug fix
 
     padsize = nSFCRparams.padsize;
     Params = nSFCRparams.Params;
@@ -127,11 +128,17 @@ function [chi_res, chi_res_M] = delta2chi_nSFCR(deltaB, maskErode, DPWeight, nSF
         nSFCRparams.tol_update = 1;            % default 1
         nSFCRparams.maxOuterIter = 50;
         out_s = delta2chi_nSFCRL1(nSFCRparams); % with L1 data fidelity, sift data inconsistency
+    
     elseif nSFCRparams.L1orL2 == 2
+        lambda1 = 1e-3;
+        nSFCRparams.lambda1 =  lambda1;
+        nSFCRparams.mu1 = 100*lambda1;
+        nSFCRparams.mu_adap = 0;
+        nSFCRparams.merit = 0;
         out_s = delta2chi_nSFCRL2(nSFCRparams); % with L2 data fidelity
     end
 
-    if nSFCRparams.nlM == 0
+    if nSFCRparams.nlM == 0 && nSFCRparams.TV == 0
         chik_res = fftn(out_s.x);
         chik_M0 = fftn(out_m.x);
         inx1 = abs(nSFCRparams.D) <= nSFCRparams.kthresh - 0.05;
