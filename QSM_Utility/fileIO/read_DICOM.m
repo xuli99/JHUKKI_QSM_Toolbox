@@ -314,7 +314,7 @@ for i = 1:length(filelist)
                 case 2
                     if isfield(info, 'RealWorldValueMappingSequence')
                         GREPhase(:,:,slice,info.EchoNumber, dynamic, coil)  = 1e-3*(single(dicomread(fullfile(DICOMdir, filelist(i).name))')*info.RealWorldValueMappingSequence.Item_1.RealWorldValueSlope+info.RealWorldValueMappingSequence.Item_1.RealWorldValueIntercept); %phase
-                    elseif isfield(info, 'RescaleSlope') && matches(info.RescaleType, ["milliradials", "mrad"])
+                    elseif isfield(info, 'RescaleSlope') && ( matches(info.RescaleType, ["milliradials", "mrad"]) || contains(info.RescaleType, 'normalized') )
                         GREPhase(:,:,slice,info.EchoNumber, dynamic, coil)  = 1e-3*(single(dicomread(fullfile(DICOMdir, filelist(i).name))')*info.RescaleSlope+info.RescaleIntercept); %phase
                     else
                         error('unknown scaling ...')

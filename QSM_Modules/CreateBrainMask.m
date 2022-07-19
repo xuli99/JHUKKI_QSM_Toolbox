@@ -208,17 +208,21 @@ else
                     % if using iRSHARP can keep the original BET mask
                     switch Params.BgRemovalMethodsDict{Params.BgRemoval}
                         case {'VSHARP','PDF','LBV+VSHARP'}
+
+                            if ~isfield(handles.Params, 'cluster')
+                                unrelyPhaseThresh = pi/2; % empirical number
+                            else
+                                unrelyPhaseThresh = handles.Params.unrelyPhase0_thresh;
+                            end
+
                             if Params.B0 == 3 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 30e-3));       
-                                unrelyPhaseThresh = pi/2;     % empirical number 
-
+                                
                             elseif Params.B0 == 7 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 18e-3));       
-                                unrelyPhaseThresh = pi/2;   
-                                
+                                                                
                             elseif Params.B0 == 9.4 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 12e-3));       
-                                unrelyPhaseThresh = pi/2;      
                             else
                                 echoNumPick = 1;            
                                 unrelyPhaseThresh = pi/4;    
