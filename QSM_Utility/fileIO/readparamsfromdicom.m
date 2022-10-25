@@ -54,6 +54,21 @@ end
 Affine2D = reshape(dicomheader.PerFrameFunctionalGroupsSequence.Item_1.PlaneOrientationSequence.Item_1.ImageOrientationPatient,[3 2]);
 Params.TAng = [Affine2D, cross(Affine2D(:,1), Affine2D(:,2))];
 
+% SliceOriSave
+[vcos, LPS] = max(abs(Params.TAng(:,3)));
+if vcos > 0.7
+    switch LPS
+        case 1
+            Params.SliceOriSave = 2;    % Sagittal
+        case 2
+            Params.SliceOriSave = 3;    % Coronal
+        case 3
+            Params.SliceOriSave = 1;    % Axial
+        otherwise
+            error('unexpected orientation.')
+    end
+end
+
 % TEs
 TE = zeros([Params.nEchoes 1]);
 for ii = 1:nimag    
