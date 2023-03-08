@@ -25,6 +25,7 @@ function Params = readparamsfromdicom(dicomheader, Params)
 %       Params.coilNum % added default 2019-10-07
 
 % created on 2019-07-09
+% bug fix on 2023-01-30
 
 pfgs = dicomheader.PerFrameFunctionalGroupsSequence;
 items = fieldnames(pfgs);
@@ -33,13 +34,13 @@ nimag = length(items);
 Params.B0 = dicomheader.MagneticFieldStrength;
 
 % change data format to single, otherwise it is uint16
-Params.sizeVol(1)   = cast(dicomheader.Width, 'single');
-Params.sizeVol(2)   = cast(dicomheader.Height, 'single');
-Params.sizeVol(3)   = cast(dicomheader.MRSeriesNrOfSlices, 'single');
+Params.sizeVol(1)   = cast(dicomheader.Width, 'double');
+Params.sizeVol(2)   = cast(dicomheader.Height, 'double');
+Params.sizeVol(3)   = cast(dicomheader.MRSeriesNrOfSlices, 'double');
 
-Params.voxSize(1)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.PixelSpacing(1), 'single');       % mm
-Params.voxSize(2)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.PixelSpacing(2), 'single');
-Params.voxSize(3)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.SliceThickness, 'single');        % mm
+Params.voxSize(1)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.PixelSpacing(1), 'double');       % mm
+Params.voxSize(2)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.PixelSpacing(2), 'double');
+Params.voxSize(3)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.SliceThickness, 'double');        % mm
 
 Params.fov      = (round(Params.voxSize.*double(Params.sizeVol)));
 Params.nEchoes     = dicomheader.MRSeriesNrOfEchoes;

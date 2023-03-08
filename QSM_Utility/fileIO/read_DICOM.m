@@ -40,6 +40,7 @@ function [GREPhase, GREMag,Params] = read_DICOM(DICOMdir, Params, verbose)
 % Updated 2021-10-28, for reverse slice stack condition, making TAng always R.H.S. (LPS)
 % Updated 2021-11-18, bug fix
 % Updated 2022-03-23, X.L. added option to use RAS NIFTI
+% Updated 2022-11-28, X.L. deal with non-image DICOM files
 
 if nargin < 1
     % uigetdir get the DICOMdir
@@ -156,8 +157,16 @@ else
 end
 
 TE = [];
+valid_index = ones(length(filelist),1, "logical");
 for ii = 1:length(filelist)
     info = dicominfo(fullfile(DICOMdir, filelist(ii).name));
+
+    % in case there are non-image DICOM files
+    if ~isfield(info, 'SliceLocation') || ~isfield(info, 'ImageType')
+        valid_index(ii) = 0;
+        continue;
+    end
+
     if info.SliceLocation<minSlice                  % find lowest slice
         minSlice = info.SliceLocation;              % in mm
         minLoc = info.ImagePositionPatient;
@@ -190,6 +199,10 @@ for ii = 1:length(filelist)
     end
 end
 
+% in case there are non-image DICOM files, cleanup the filelist and update info
+filelist = filelist(valid_index);
+info = dicominfo(fullfile(DICOMdir, filelist(end).name));
+
 if length(TE) ~= NumEcho && ~isempty(tagEchoNumber)
     error('length of TEs does not equal NumEcho, need to check ...')
 else
@@ -200,6 +213,10 @@ end
 % Number of Slices
 if isfield(info, 'SpacingBetweenSlices')
     Params.sizeVol(3) = round(norm(maxLoc - minLoc)/info.SpacingBetweenSlices) + 1;
+    % in case of overcontiguous slices, not recommended
+    if info.SpacingBetweenSlices < Params.voxSize(3)
+        Params.voxSize(3) = info.SpacingBetweenSlices;
+    end
 else
     Params.sizeVol(3) = round(norm(maxLoc - minLoc)/Params.voxSize(3)) + 1;
 end

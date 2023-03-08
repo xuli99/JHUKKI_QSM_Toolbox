@@ -66,21 +66,27 @@ else
             for i = 1:length(Params.SaveEcho)
                 fileName = [ Params.FileBaseName, '_GREMag', num2str(Params.SaveEcho(i))];
 
-                % Remove previous files of FSL output OTHERWSIE FSL WILL NOT RUN
-                delete([fileName '_brain.*']);
-                delete([fileName '_brain_mask.*']);
-
+                if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                    % Remove previous files of FSL output OTHERWSIE FSL WILL NOT RUN
+                    delete([fileName '_brain.*']);
+                    delete([fileName '_brain_mask.*']);
+                end
+                
                 % Save new ones            
                 saveNII(GREMag(:,:,:,Params.SaveEcho(i), 1).*1, fileName, Params, 1);  
+                
             end
 
             %% Using BET to extract BrainMask
             fname1 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1))];
-            inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-            if ~isfield(handles.Params, 'cluster')  % GUI only
-                multiWaitbar( textWaitbar, 0.2 );
+          
+            if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                if ~isfield(handles.Params, 'cluster')  % GUI only
+                    multiWaitbar( textWaitbar, 0.2 );
+                end
+                system(inputstring1);
             end
-            system(inputstring1);
 
             % Save
             output = [fname1, '_brain_mask.nii.gz'];
@@ -110,11 +116,14 @@ else
                 % Second mask at later echo, needs to be more conservative
                 % using BET
                 fname2 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(2))];
-                inputstring1 = [Params.FSLFolder, 'bet ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-                if ~isfield(handles.Params, 'cluster') 
-                    multiWaitbar( textWaitbar, 0.5 );
+
+                if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                    inputstring1 = [Params.FSLFolder, 'bet ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                    if ~isfield(handles.Params, 'cluster') 
+                        multiWaitbar( textWaitbar, 0.5 );
+                    end
+                    system(inputstring1);
                 end
-                system(inputstring1);
 
                 % Combine BET masks
                 if ~isfield(handles.Params, 'cluster')  % GUI only
