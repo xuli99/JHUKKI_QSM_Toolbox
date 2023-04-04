@@ -6,6 +6,7 @@
 % Updated by Xu Li, 2019-09-07, Added LapPhaseCorrection
 % Updated by Xu Li, 2020-10-16, Updated with new phase_unwrap_laplacian
 % Updated 2021-06-27 X.L., cluster version
+% Updated 2023-04-04 X.L., added ROMEO option for cluster version
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -47,6 +48,8 @@ switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod}
         StringApp3 = 'Lap';
     case 'NonlinearFit + Path'
         StringApp3 = 'NLFpath';
+    case 'ROMEO'
+        StringApp3 = 'ROMEO';
     otherwise
         error('Unknown unwrapping method.')
 end
@@ -184,6 +187,39 @@ else
                 end
             end
 
+        case 'ROMEO'
+
+            % need to setup ROMEO path and parameters in ParameteSetting files
+            % make it availabe for cluster version only
+
+            GREMag = handles.GREMag;    % ROMEO is better with GREMag, with template unwrapping, skip referencing
+            romeo_parameters = handles.Params.romeo_parameters;
+
+            % parameters set according to each data
+            GREPhase_romeo_b0 = zeros([Params.sizeVol, Params.nDynamics]);
+            phase_quality_map = zeros([Params.sizeVol, Params.nDynamics]);
+
+            tempdir = './tmp';
+            romeo_parameters.output_dir = fullfile(tempdir, 'romeo_tmp'); % if not set pwd() is used
+            romeo_parameters.TE = Params.TEs*1e3;     % required for multi-echo, in the unit of ms
+            romeo_parameters.voxel_size = Params.voxSize;
+            mkdir(romeo_parameters.output_dir);
+            
+            for dynamic_ind = 1:Params.nDynamics
+
+                romeo_parameters.mag = GREMag(:,:,:,:,dynamic_ind);
+
+                [GREPhase(:,:,:,:,dynamic_ind), GREPhase_romeo_b0(:,:,:,dynamic_ind)] = ROMEO(GREPhase(:,:,:,:,dynamic_ind), romeo_parameters);
+                quality_fn = fullfile(romeo_parameters.output_dir, 'quality.nii');
+                
+                phase_quality_map(:,:,:,dynamic_ind) = load_untouch_nii(quality_fn).img;
+
+            end
+
+            if romeo_parameters.cleanup == 1
+                [status, msg] = rmdir(tempdir, 's'); % remove the temporary ROMEO output folder
+            end
+
         otherwise
              error('Unknown unwrapping method.')
 
@@ -195,6 +231,8 @@ else
             save([outputFile '.mat'], 'GREPhase', 'Params');
         case {'NonlinearFit + Path'}
             save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight');
+        case {'ROMEO'}
+            save([outputFile '.mat'], 'GREPhase', 'Params', 'GREPhase_romeo_b0', 'phase_quality_map');
         otherwise
             error('Unknown unwrapping method.')
     end
@@ -208,12 +246,15 @@ else
 end
 
 % Save
+handles.GREPhase        = GREPhase;
 switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
     case {'Laplacian', 'Path'}
-        handles.GREPhase        = GREPhase;
+        % do nothing
     case {'NonlinearFit + Path'}
-        handles.GREPhase        = GREPhase;
         handles.DPWeight        = DPWeight;
+    case {'ROMEO'}
+        handles.phase_quality_map = phase_quality_map;
+        handles.GREPhase_romeo_b0 = GREPhase_romeo_b0;
     otherwise
         error('Unknown unwrapping method.')
 end

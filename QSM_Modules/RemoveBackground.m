@@ -7,6 +7,7 @@
 % Updated by Xu Li, 2021-05-25, optimized weighting for Echo Averaging
 % Updated 2021-06-28, X.L., cluster version
 % Updated 2021-08-20, X.L., bug fix for dyanmic data
+% Updated 2023-04-04 X.L., added ROMEO option for cluster version
 
 %% Get variables
 Params      = handles.Params;
@@ -87,6 +88,11 @@ if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'NonlinearFit +
         GREPhase = GREPhase./(2*pi*(Params.TEs(Params.echoNums)));  % in Hz
     end
     Params.echoNums = 1;   
+
+elseif strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'ROMEO') && (Params.romeo_parameters.individual == 0)
+    % used ROMEO combind by default, if romeo_individual ==0, do BG removal seperately
+    GREPhase = handles.GREPhase_romeo_b0;   % normalized, offeset removed, in Hz
+    Params.echoNums = 1;
 
 elseif (Params.EchoAvg > 0)
     % check if need to recalculate

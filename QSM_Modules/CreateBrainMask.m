@@ -9,6 +9,7 @@
 % Updated 2021-08-05 X.L., added unreliable phase mask2
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
 % Updated 2022-05-03, X.L., added switch for compatibility with some old mask options
+% Updated 2023-04-04 X.L., added ROMEO option for cluster version
 
 %% Get variables
 Params      = handles.Params;
@@ -86,6 +87,8 @@ else
                     multiWaitbar( textWaitbar, 0.2 );
                 end
                 system(inputstring1);
+            else
+                disp('skipping BET, read in predefined brain mask ...')
             end
 
             % Save
@@ -164,7 +167,7 @@ else
             % MaskOut Unreliable Phase
             if Params.nEchoes > 1    
                 temp = GREPhaseRaw(:,:,:,:,1);  
-                mask_intrinsic = (sum(abs(temp - min(temp(:))) < 10*eps, 4) == (Params.nEchoes-1)); % air/bone mask
+                mask_intrinsic = (sum(abs(temp - min(temp(:))) < 10*eps, 4) >= (Params.nEchoes-1)); % air/bone mask
             else
                 mask_intrinsic = zeros(size(maskErode));
             end
@@ -173,7 +176,7 @@ else
             TV = TVOP;
 
             switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod}
-                case {'Path', 'NonlinearFit + Path'} 
+                case {'Path', 'NonlinearFit + Path', 'ROMEO'} 
 
                     mask_unrelyPhase = zeros(size(maskErode));
 
@@ -201,6 +204,10 @@ else
                         [biggest, idx] = max(numPixels);
                         tempMask(CC.PixelIdxList{idx}) = 10;        
                         mask_unrelyPhase = mask_unrelyPhase | (tempMask ~= 10);                    
+                    end
+
+                    if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'ROMEO')
+                        mask_unrelyPhase = mask_unrelyPhase | (handles.phase_quality_map < Params.romeo_phasequality_thresh); 
                     end
 
                     if isfield(Params, 'maskHs')
