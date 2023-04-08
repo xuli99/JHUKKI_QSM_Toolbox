@@ -82,7 +82,7 @@ else
             fname1 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1))];
           
             if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
-                inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                inputstring1 = [Params.FSLFolder, 'bet2 ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
                 
                 if isfield(handles.Params, 'FSLBETAdditionalFlag')
                     inputstring1 = [inputstring1, ' ', handles.Params.FSLBETAdditionalFlag];
