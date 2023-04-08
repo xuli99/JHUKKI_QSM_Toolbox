@@ -83,6 +83,11 @@ else
           
             if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
                 inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                
+                if isfield(handles.Params, 'FSLBETAdditionalFlag')
+                    inputstring1 = [inputstring1, ' ', handles.Params.FSLBETAdditionalFlag];
+                end
+                
                 if ~isfield(handles.Params, 'cluster')  % GUI only
                     multiWaitbar( textWaitbar, 0.2 );
                 end
