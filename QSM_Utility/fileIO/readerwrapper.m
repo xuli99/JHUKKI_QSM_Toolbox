@@ -15,6 +15,8 @@ function [GREMag, GREPhase, Params, handles] = readerwrapper(PathName, FileName,
 % updated 2021-09-24, added mcpc-3d-s for multi-echo coil combination
 % updated 2022-03-22, added option to load NIFTI hdr from .mat & DICOM (dicm2nii)
 % updated 2023-02-02, for PAR/REC data without Phase Recon but with R/I
+% updated 2023-05-07, added nifti support, nifti combined from dcm2niix
+%                       output, see GRE_preparation_2nifti.m
 
 [~,FileBaseName,FileExt] = fileparts(FileName);
 
@@ -260,6 +262,68 @@ elseif (strcmpi(FileExt,'.mat'))
     if isfield(S.Params, 'datatype')
         Params.datatype = S.Params.datatype;
     end
+
+elseif (strcmpi(FileExt,'.gz') || strcmpi(FileExt, '.nii'))
+    
+    % nifti file of magnitude/phase pair
+    % read other Params from json file, NIFTI is always in RAS system
+    if contains(FileBaseName, '_GRE_mag')
+        FileBaseName = extractBefore(FileBaseName, '_GRE_mag');
+    elseif contains(FileBaseName, '_GRE_phase')
+        FileBaseName = extractBefore(FileBaseName, '_GRE_phase');
+    else
+        error('Wrong naming convention.')
+    end
+
+    nii_mag = load_untouch_nii([PathName FileBaseName, '_GRE_mag.nii.gz']);
+    nii_phase = load_untouch_nii([PathName FileBaseName, '_GRE_phase.nii.gz']);
+    GREMag = permute(nii_mag.img, [2,1,3:ndims(nii_mag.img)]);
+    GREPhase = permute(nii_phase.img, [2,1,3:ndims(nii_phase.img)]);
+
+    % in case dcm2niix -p y failed the correct scaling
+    if max(GREPhase(:)) > 100
+        % GREPhase = GREPhase.*nii_phase.hdr.dime.scl_slope + nii_phase.hdr.dime.scl_inter;
+        error('GRE phase was scaled incorrectly ...')
+    end
+
+    Params = handles.Params;            % copy other field in handles.Params first
+    
+    Params.nifti_hdr = nii_phase.hdr;   % nifti head for output, with multi-layer
+    Params.nifti_hdr.dime.dim(5) = 1;         % echo combined
+    Params.nifti_hdr.dime.pixdim(5) = 0;
+    Params.nifti_hdr.dime.dim(1) = 3;
+
+    % read TE from json file
+    json_list = dir(fullfile(PathName, [FileBaseName, '*_ph.json']));
+    json_filenames = cell(length(json_list), 1);
+    for json_ii = 1:length(json_list)
+        json_filenames{json_ii} = fullfile(json_list(json_ii).folder, json_list(json_ii).name);
+    end
+    Params.TEs = readTE_dcm2niix_JSON(json_filenames);
+    Params.nEchoes = length(Params.TEs);
+
+    % read other params from json file, B0, TR etc.
+    Params = readParams_dcm2niix_JSON(json_filenames{1}, Params);
+
+    if ~isfield(handles.Params, 'cluster')  % GUI only
+        if isfield(Params, 'B0')
+            set(handles.VarB0,'String', Params.B0);     
+        end
+    end
+
+    Params.sizeVol = nii_mag.hdr.dime.dim(2:4);  % 2-4, pixdim, 5:echoes, 6:dynamics?
+    Params.voxSize = nii_mag.hdr.dime.pixdim(2:4);
+    Params.fov = Params.sizeVol.*Params.voxSize;
+    Params.nDynamics = nii_mag.hdr.dime.dim(6);  % need check 
+
+    % permute
+    Params = permuteParams(Params);
+
+    [Params.b0dir, Params.TAng] = get_B0_dir_from_nifti(nii_mag);
+
+    Params.PathName = PathName;
+    Params.FileBaseName = FileBaseName;
+
 else
     error('Sorry, we can not open this type of file...');
 end

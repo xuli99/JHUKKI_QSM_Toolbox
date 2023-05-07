@@ -8,6 +8,7 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     % 2020-04-07, updated sliceOri option for saving saggital images
     % 2021-01-01, added SliceOriSave
     % 2022-03-22, added option to use loaded NIFTI hdr from DICOM (dicm2nii)
+    % 2023-05-08, added option for NIFTI hdr from nifti
     
     if nargin < 4
         permuteflag = 1;        % default setting, compatible with old version
@@ -41,7 +42,13 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
             % check dim
             % nii = nii_tool('init', saveVar);
             % if nii.hdr.dim == Params.nifti_hdr.dim
-            if nii.hdr.dime.dim == Params.nifti_hdr.dim
+            if isfield(Params.nifti_hdr, 'dime')
+                dim = Params.nifti_hdr.dime.dim;
+            else
+                dim = Params.nifti_hdr.dim;
+            end
+
+            if nii.hdr.dime.dim == dim
                 % flip if needed.
                 if isfield(Params, 'nifti_flp')
                     img_data = nii.img;
@@ -95,6 +102,25 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     clear nii
 
     function hdr = hdr_update(hdr, new_hdr)
+        if isfield(new_hdr, 'dime')
+            new_hdr.pixdim = new_hdr.dime.pixdim;
+            new_hdr.vox_offset = new_hdr.dime.vox_offset;
+
+            new_hdr.qform_code = new_hdr.hist.qform_code;
+            new_hdr.sform_code = new_hdr.hist.sform_code;
+            new_hdr.quatern_b = new_hdr.hist.quatern_b;
+            new_hdr.quatern_c = new_hdr.hist.quatern_c;
+            new_hdr.quatern_d = new_hdr.hist.quatern_d;
+            new_hdr.qoffset_x = new_hdr.hist.qoffset_x;
+            new_hdr.qoffset_y = new_hdr.hist.qoffset_y;
+            new_hdr.qoffset_z = new_hdr.hist.qoffset_z;
+            new_hdr.srow_x = new_hdr.hist.srow_x;
+            new_hdr.srow_y = new_hdr.hist.srow_y;
+            new_hdr.srow_z = new_hdr.hist.srow_z;
+            new_hdr.magic = new_hdr.hist.magic;
+
+        end
+
         if isfield(hdr, 'dime')
             % multi-layer way
             hdr.dime.pixdim = new_hdr.pixdim; hdr.dime.vox_offset = new_hdr.vox_offset;

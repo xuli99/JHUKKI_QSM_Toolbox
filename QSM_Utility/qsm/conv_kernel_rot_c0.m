@@ -45,7 +45,13 @@ kz = cast(kz, datatype);
 [KX_Grid, KY_Grid, KZ_Grid] = meshgrid(ky, kx, kz);
 KSq = KX_Grid.^2 + KY_Grid.^2 + KZ_Grid.^2;
 
-if isfield(Params, 'Tsominv') && isfield(Params, 'Tpom')
+if isfield(Params, 'b0dir')
+    Hsub = Params.b0dir;
+    R31 = Hsub(1);
+    R32 = Hsub(2);
+    R33 = Hsub(3);
+
+elseif isfield(Params, 'Tsominv') && isfield(Params, 'Tpom')
     
     H0 = [0, 0, 1]';                   % Lab space XYZ  
     extra = [0,-1,0;-1,0,0;0,0,1];     % 
