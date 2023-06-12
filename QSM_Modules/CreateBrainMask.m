@@ -92,7 +92,6 @@ else
                 if ~isfield(handles.Params, 'cluster')  % GUI only
                     multiWaitbar( textWaitbar, 0.2 );
                 end
-                system(inputstring1);
             end
             
             % added feature to run fsl using wsl on pc
@@ -138,7 +137,6 @@ else
                     if ~isfield(handles.Params, 'cluster') 
                         multiWaitbar( textWaitbar, 0.5 );
                     end
-                    system(inputstring1);
                 end
                 
                 % added feature to run fsl using wsl on pc
