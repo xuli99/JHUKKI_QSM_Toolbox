@@ -7,6 +7,7 @@
 % Updated by Xu Li, 2020-10-16, Updated with new phase_unwrap_laplacian
 % Updated 2021-06-27 X.L., cluster version
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
+% Updated 2023-06-01 X.L., saving format update
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -228,11 +229,11 @@ else
     % save data
     switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
         case {'Laplacian', 'Path'}
-            save([outputFile '.mat'], 'GREPhase', 'Params');
+            save([outputFile '.mat'], 'GREPhase', 'Params', '-v7.3');
         case {'NonlinearFit + Path'}
-            save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight');
+            save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight', '-v7.3');
         case {'ROMEO'}
-            save([outputFile '.mat'], 'GREPhase', 'Params', 'GREPhase_romeo_b0', 'phase_quality_map');
+            save([outputFile '.mat'], 'GREPhase', 'Params', 'GREPhase_romeo_b0', 'phase_quality_map', '-v7.3');
         otherwise
             error('Unknown unwrapping method.')
     end

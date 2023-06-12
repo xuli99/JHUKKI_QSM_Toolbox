@@ -10,6 +10,7 @@
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
 % Updated 2022-05-03, X.L., added switch for compatibility with some old mask options
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
+% Updated 2023-06-01, X.L., added wsl support for pc
 
 %% Get variables
 Params      = handles.Params;
@@ -53,7 +54,13 @@ if(exist(fullfile(cd, [outputFile, '.mat']), 'file') == 2 && Params.saveOutput)
 else
     if ~single_step_flag
         %% DOES FSL BET EXISITS?
-        if(exist(Params.FSLFolder, 'dir') == 7)
+        if ispc
+            [status, cmdoutput] = system(['wsl ', handles.Params.FSLFolder, 'flirt -version']);
+        else
+            cmdoutput=[];
+        end
+        
+        if(exist(Params.FSLFolder, 'dir') == 7) || (ispc && ~isempty(cmdoutput))
             %% New mask
             textWaitbar = 'Creating brain mask...';
             if ~isfield(handles.Params, 'cluster')  % GUI only
@@ -95,6 +102,15 @@ else
             else
                 disp('skipping BET, read in predefined brain mask ...')
             end
+            
+            % added feature to run fsl using wsl on pc
+            if ispc
+                [~, wslpwd] = system('wsl pwd');  % with \n at end
+                fname1_wsl = [wslpwd(1:end-1), '/', fname1];
+                wslsetenv = 'export FSLOUTPUTTYPE=NIFTI_GZ; ';
+                inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname1_wsl, ' ', fname1_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+            end
+            system(inputstring1);
 
             % Save
             output = [fname1, '_brain_mask.nii.gz'];
@@ -132,6 +148,13 @@ else
                     end
                     system(inputstring1);
                 end
+                
+                % added feature to run fsl using wsl on pc
+                if ispc
+                    fname2_wsl = [wslpwd(1:end-1), '/', fname2];
+                    inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname2_wsl, ' ', fname2_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                end                
+                system(inputstring1);
 
                 % Combine BET masks
                 if ~isfield(handles.Params, 'cluster')  % GUI only
