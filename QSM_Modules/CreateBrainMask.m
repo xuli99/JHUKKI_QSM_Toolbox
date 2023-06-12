@@ -10,7 +10,7 @@
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
 % Updated 2022-05-03, X.L., added switch for compatibility with some old mask options
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
-% Updated 2023-06-01, X.L., added wsl support for pc
+% Updated 2023-06-12, X.L., added wsl support for pc
 
 %% Get variables
 Params      = handles.Params;
@@ -87,10 +87,19 @@ else
 
             %% Using BET to extract BrainMask
             fname1 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1))];
-          
+
             if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
                 inputstring1 = [Params.FSLFolder, 'bet2 ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-                
+
+                % added feature to run fsl using wsl on pc
+                if ispc
+                    [~, wslpwd] = system('wsl pwd');  % with \n at end
+                    fname1_wsl = [wslpwd(1:end-1), '/', fname1];
+                    wslsetenv = 'export FSLOUTPUTTYPE=NIFTI_GZ; ';
+                    inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname1_wsl, ' ', fname1_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                end
+
+                % Additional optional BET Flag
                 if isfield(handles.Params, 'FSLBETAdditionalFlag')
                     inputstring1 = [inputstring1, ' ', handles.Params.FSLBETAdditionalFlag];
                 end
@@ -98,19 +107,11 @@ else
                 if ~isfield(handles.Params, 'cluster')  % GUI only
                     multiWaitbar( textWaitbar, 0.2 );
                 end
+
                 system(inputstring1);
             else
-                disp('skipping BET, read in predefined brain mask ...')
+                disp('skipping FSL BET, assuming mask already created.')
             end
-            
-            % added feature to run fsl using wsl on pc
-            if ispc
-                [~, wslpwd] = system('wsl pwd');  % with \n at end
-                fname1_wsl = [wslpwd(1:end-1), '/', fname1];
-                wslsetenv = 'export FSLOUTPUTTYPE=NIFTI_GZ; ';
-                inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname1_wsl, ' ', fname1_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-            end
-            system(inputstring1);
 
             % Save
             output = [fname1, '_brain_mask.nii.gz'];
@@ -141,20 +142,20 @@ else
                 % using BET
                 fname2 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(2))];
 
-                if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
-                    inputstring1 = [Params.FSLFolder, 'bet ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                if ~isfield(handles.Params, 'FSLBETskip') % default, otherwise skip for non_brain data
+                    inputstring1 = [Params.FSLFolder, 'bet2 ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+
+                    % added feature to run fsl using wsl on pc
+                    if ispc
+                        fname2_wsl = [wslpwd(1:end-1), '/', fname2];
+                        inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname2_wsl, ' ', fname2_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                    end                
+
                     if ~isfield(handles.Params, 'cluster') 
                         multiWaitbar( textWaitbar, 0.5 );
-                    end
+                    end                    
                     system(inputstring1);
                 end
-                
-                % added feature to run fsl using wsl on pc
-                if ispc
-                    fname2_wsl = [wslpwd(1:end-1), '/', fname2];
-                    inputstring1 = ['wsl ', wslsetenv, Params.FSLFolder, 'bet2 ', fname2_wsl, ' ', fname2_wsl, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-                end                
-                system(inputstring1);
 
                 % Combine BET masks
                 if ~isfield(handles.Params, 'cluster')  % GUI only
