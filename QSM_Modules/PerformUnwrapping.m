@@ -6,6 +6,7 @@
 % Updated by Xu Li, 2019-09-07, Added LapPhaseCorrection
 % Updated by Xu Li, 2020-10-16, Updated with new phase_unwrap_laplacian
 % Updated 2021-06-27 X.L., cluster version
+% Updated 2023-06-01 X.L., saving format update
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -183,9 +184,9 @@ else
     % save data
     switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
         case {'Laplacian', 'Path'}
-            save([outputFile '.mat'], 'GREPhase', 'Params');
+            save([outputFile '.mat'], 'GREPhase', 'Params', '-v7.3');
         case {'NonlinearFit + Path'}
-            save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight');
+            save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight', '-v7.3');
         otherwise
             error('Unknown unwrapping method.')
     end

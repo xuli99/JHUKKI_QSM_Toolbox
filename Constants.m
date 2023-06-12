@@ -2,23 +2,37 @@
 % Authors: Jiri van Bergen and Xu Li
 % Updated by Xu Li, 2019-06-20
 % Updated by Xu Li, 2021-06-23 for cluster version
+% Updated by Xu Li, 2023-06-01 added wsl support for pc
 
 handles.Params.QSMdir           = fileparts(mfilename('fullpath'));
 handles.Params.QSMSettingsFile  = fullfile(handles.Params.QSMdir, '/QSM_ConstantsSaved.mat');
 
 % check FSL installation
-fsldir = getenv('FSLDIR');
-if isempty(fsldir)
-    % Use structure "handles" instead of graphic object handles
-    disptxt = 'FSLDIR set to default: /usr/local/fsl, check fsl installation... ';
-    disp(disptxt)
-    if isfield(handles.Params, 'cluster') % for cluster
-        writelog(logfile, [logtxt, '\n']);
+if ispc
+    % if ispc, use wsl installation
+    % set default fsl installation folder under wsl
+    fsldir = '/usr/local/fsl';
+    cmd = ['wsl ', fsldir, '/bin/flirt -version'];
+    [status, cmdout] = system(cmd);
+    if contains(cmdout, 'FLIRT')
+        disp(['fsl under WSL availabe at: ', fsldir])
+    else
+        fsldir = [];
     end
-    setenv('FSLDIR','/usr/local/fsl');   
-    setenv('FSLOUTPUTTYPE', 'NIFTI_GZ');
+else
     fsldir = getenv('FSLDIR');
-end        
+    if isempty(fsldir)
+        % Use structure "handles" instead of graphic object handles
+        disptxt = 'FSLDIR set to default: /usr/local/fsl, check fsl installation... ';
+        disp(disptxt)
+        if isfield(handles.Params, 'cluster') % for cluster
+            writelog(logfile, [logtxt, '\n']);
+        end
+        setenv('FSLDIR','/usr/local/fsl');   
+        setenv('FSLOUTPUTTYPE', 'NIFTI_GZ');
+        fsldir = getenv('FSLDIR');
+    end        
+end
 
 % Check if file exists
 if(exist(handles.Params.QSMSettingsFile, 'file') == 2 )
@@ -53,6 +67,10 @@ else
     handles.Params.ErodeRadius      = 1;    % mm, mask erosion
     handles.Params.SHARPradius      = 8;    % mm, SHARP kernal radius
     handles.Params.MaskThreshold    = 65;   % backup masking code
+end
+
+if ispc
+    handles.Params.FSLFolder =  strrep(handles.Params.FSLFolder, filesep, '/');
 end
 
 %% Parameters not defined by Users

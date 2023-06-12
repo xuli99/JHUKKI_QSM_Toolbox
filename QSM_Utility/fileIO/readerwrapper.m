@@ -96,7 +96,7 @@ elseif(sum(strcmpi(FileExt,{'.DIC';'.IMA';'.DICOM'; '.dcm'; '.1'; ''})) > 0) && 
     
     saveDICOM2mat = 1;
     if saveDICOM2mat == 1
-        save([Params.FileBaseName, '.mat'], 'GREMag', 'GREPhase', 'Params');
+        save([Params.FileBaseName, '.mat'], 'GREMag', 'GREPhase', 'Params', '-v7.3');
     end
 
 elseif(strcmpi(FileBaseName, 'method'))
