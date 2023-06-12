@@ -14,6 +14,7 @@ function [GREMag, GREPhase, Params, handles] = readerwrapper(PathName, FileName,
 % updated 2021-06-28, cluster version
 % updated 2021-09-24, added mcpc-3d-s for multi-echo coil combination
 % updated 2022-03-22, added option to load NIFTI hdr from .mat & DICOM (dicm2nii)
+% updated 2023-02-02, for PAR/REC data without Phase Recon but with R/I
 
 [~,FileBaseName,FileExt] = fileparts(FileName);
 
@@ -25,8 +26,20 @@ if(strcmpi(FileExt,'.par'))
     Params      = ReadParFile([PathName FileName], handles.Params);     % extract basic scan parameters from .par file
     Params      = permuteParams(Params);                                
 
-    GREMag = (GREdataAll(:,:,:,:,:,1,1,1,1));     % data type Mag, ncol, nrow, nslice,nechoes,ndynamics
-    GREPhase = (GREdataAll(:,:,:,:,:,1,1,1,2));   % data type Phase same 5D array
+    if size(GREdataAll, 9)  == 2
+        GREMag = (GREdataAll(:,:,:,:,:,1,1,1,1));     % data type Mag, ncol, nrow, nslice,nechoes,ndynamics
+        GREPhase = (GREdataAll(:,:,:,:,:,1,1,1,2));   % data type Phase same 5D array
+
+    elseif size(GREdataAll, 9) > 2
+        GREMag = (GREdataAll(:,:,:,:,:,1,1,1,1)); 
+        GREReal = GREdataAll(:,:,:,:,:,1,1,1,2);
+        GREImag = GREdataAll(:,:,:,:,:,1,1,1,3);
+        GREPhase = angle(GREReal + 1i*GREImag);
+        clear GREReal GREImag
+    else
+        % no phase data
+        error('No phase data found. Cannont do QSM.')
+    end
 
     %% Slice orientation
 
@@ -42,6 +55,8 @@ if(strcmpi(FileExt,'.par'))
         otherwise
             disp('error info in slice orientation')
     end
+
+    Params.datatype     = 'ParRec';
 
 elseif(sum(strcmpi(FileExt,{'.DIC';'.IMA';'.DICOM'; '.dcm'; '.1'; ''})) > 0) && ~(strcmpi(FileBaseName, 'method'))
     % check whether conventional/enhanced dicom
@@ -94,6 +109,8 @@ elseif(sum(strcmpi(FileExt,{'.DIC';'.IMA';'.DICOM'; '.dcm'; '.1'; ''})) > 0) && 
         GREMag = sqrt(sum(GREMag.^2, 6));                % over coil dim;
     end
     
+    Params.datatype     = 'DICOM'; 
+
     saveDICOM2mat = 1;
     if saveDICOM2mat == 1
         save([Params.FileBaseName, '.mat'], 'GREMag', 'GREPhase', 'Params', '-v7.3');
@@ -108,13 +125,18 @@ elseif(strcmpi(FileBaseName, 'method'))
     
     % Updated read_2dseq.m, modified from Chern-Chyi (Cecil) Yen @ CMS/LFMI/NINDS/NIH
     %   dim1 dim2 dim3 Echo Slice Cycle Repetition Channel Complex
-    [GREMag , hdr_Mag] = read_2dseq(PathName_Mag); 
+    [GREMag, hdr_Mag] = read_2dseq(PathName_Mag); 
     [GREPhase, hdr_Phase] = read_2dseq(PathName_Phase);
     
     GREMag = cast(GREMag, 'single');
     GREPhase = -1.0*cast(GREPhase, 'single');  % sign may flip with new data
     
     Params.sizeVol = hdr_Mag.size(:)';
+    % in case GREMag and GREPhase had different recon
+    if sum(hdr_Mag.size ~= hdr_Phase.size) > 0 || sum(hdr_Mag.VisuCoreOrientation(:) ~= hdr_Phase.VisuCoreOrientation(:)) > 0
+        GREPhase = permute(GREPhase, [2,1,3:length(size(GREPhase))]);  % slice number should match
+    end
+
     Params.voxSize = hdr_Mag.dim(:)';
     Params.fov = Params.sizeVol(1:3).*Params.voxSize;
     Params.coilNum = hdr_Mag.NumInputChan;
@@ -125,11 +147,11 @@ elseif(strcmpi(FileBaseName, 'method'))
     Params.nDynamics = hdr_Mag.NRepetitions;
     Params.VisuCoreDim = hdr_Mag.VisuCoreDim;   % 2D vs 3D
     
-    if contains(hdr_Phase.SliceOrient, 'axial', 'IgnoreCase', true)
+    if contains(hdr_Mag.SliceOrient, 'axial', 'IgnoreCase', true)
         Params.sliceOri = 1;
-    elseif contains(hdr_Phase.SliceOrient, 'sag', 'IgnoreCase', true)
+    elseif contains(hdr_Mag.SliceOrient, 'sag', 'IgnoreCase', true)
         Params.sliceOri = 2;
-    elseif contains(hdr_Phase.SliceOrient, 'coronal', 'IgnoreCase', true)
+    elseif contains(hdr_Mag.SliceOrient, 'coronal', 'IgnoreCase', true)
         Params.sliceOri = 3;
     else
         disp('unknown slice orientation.')
@@ -139,8 +161,9 @@ elseif(strcmpi(FileBaseName, 'method'))
     GREPhase = -1.0*GREPhase;
     % Params.sliceOri = 1;
 
-    Params.TAng = hdr_Phase.VisuCoreOrientation;  % still need to test
-        
+    Params.TAng         = (hdr_Mag.VisuCoreOrientation)';  % still need test, initial test 2022, see also conv_kernel_rot_c0.m
+    Params.datatype     = '2dseq'; 
+
     Params.PathName = PathName;    
     parentFolders = textscan(PathName, '%s', 'delimiter', filesep);
     parentFolders = parentFolders{1};
@@ -207,10 +230,10 @@ elseif (strcmpi(FileExt,'.mat'))
 
     if isfield(S.Params, 'sliceOri')
         Params.sliceOri = S.Params.sliceOri;
-        Params.ang = S.Params.ang;
-        Params.AngAP = S.Params.AngAP;
-        Params.AngFH = S.Params.AngFH;
-        Params.AngRL = S.Params.AngRL;            
+%         Params.ang = S.Params.ang;
+%         Params.AngAP = S.Params.AngAP;
+%         Params.AngFH = S.Params.AngFH;
+%         Params.AngRL = S.Params.AngRL;            
     end
 
     if isfield(S.Params, 'Tsom')
@@ -234,6 +257,9 @@ elseif (strcmpi(FileExt,'.mat'))
         Params.nifti_affine = S.Params.nifti_affine;
     end
 
+    if isfield(S.Params, 'datatype')
+        Params.datatype = S.Params.datatype;
+    end
 else
     error('Sorry, we can not open this type of file...');
 end

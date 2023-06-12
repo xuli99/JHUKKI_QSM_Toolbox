@@ -177,7 +177,7 @@ else
                 %% Use V-SHARP algorithm
                 clear GREMag
                 for dynamic_ind = 1:Params.nDynamics
-                    if prod(Params.sizeVol)*floor(Params.SHARPradius./min(Params.voxSize)) > 1e9  % in case ultra-high res
+                    if prod(Params.sizeVol)*floor(Params.SHARPradius./min(Params.voxSize)) > 1e10  % in case ultra-high res
                         % V-SHARP MULTI - image space version
                         disp('VSHARP image space version.')
                         [freqMap(:,:,:,1,dynamic_ind), dpfield_fit] = SHARP_Adaptive_Multi(GREPhase(:,:,:,:,dynamic_ind), maskErode, Params.SHARPradius, Params.thresh_tsvd, Params, handles);

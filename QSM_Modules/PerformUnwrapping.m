@@ -88,6 +88,12 @@ else
         writelog(handles.logfile, [textWaitbar, '...']);
     end
     
+    if isfield(handles.Params, 'RefVox')
+        RefVox = handles.Params.RefVox;
+    else
+        RefVox = [];
+    end
+
     switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
         case 'Laplacian'
             for dynamic_ind = 1:Params.nDynamics
@@ -95,7 +101,7 @@ else
                     % Unwrapping all the echoes
                     if Params.phase2DprocFlag == 0  
                         % default is 3D
-                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, [], 2);
+                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
                     else
 %                         % 2D phase unwrapping slice by slice
 %                         textWaitbar2D = 'Performing 2D phase unwrapping first';
@@ -106,7 +112,7 @@ else
 %                             GREPhase(:,:,sliceii,echo_ind,dynamic_ind) = phase_unwrap_laplacian_2D(GREPhase(:,:,sliceii,echo_ind,dynamic_ind), Params, 0, 2);  % no refVox
 %                             multiWaitbar(textWaitbar2D, sliceii/Params.sizeVol(3), 'Color', 'b' );
 %                         end            
-                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, [], 2);
+                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
                     end
                     if ~isfield(handles.Params, 'cluster')  % GUI only 
                         % Waitbar        
@@ -162,7 +168,10 @@ else
         case 'Path'
             GREPhase = double(GREPhase);
             N = size(GREPhase);
-            RefVox = [floor(N(1)/2), floor(N(2)/2), floor(N(3)/2)]; 
+            
+            if isempty(RefVox) 
+                RefVox = [floor(N(1)/2), floor(N(2)/2), floor(N(3)/2)]; 
+            end
 
             for dynamic_ind = 1:Params.nDynamics
                 for echo_ind = 1:length(Params.TEs)

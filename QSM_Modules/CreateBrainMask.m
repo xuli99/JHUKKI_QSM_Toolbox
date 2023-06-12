@@ -73,19 +73,26 @@ else
             for i = 1:length(Params.SaveEcho)
                 fileName = [ Params.FileBaseName, '_GREMag', num2str(Params.SaveEcho(i))];
 
-                % Remove previous files of FSL output OTHERWSIE FSL WILL NOT RUN
-                delete([fileName '_brain.*']);
-                delete([fileName '_brain_mask.*']);
-
+                if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                    % Remove previous files of FSL output OTHERWSIE FSL WILL NOT RUN
+                    delete([fileName '_brain.*']);
+                    delete([fileName '_brain_mask.*']);
+                end
+                
                 % Save new ones            
                 saveNII(GREMag(:,:,:,Params.SaveEcho(i), 1).*1, fileName, Params, 1);  
+                
             end
 
             %% Using BET to extract BrainMask
             fname1 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1))];
-            inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-            if ~isfield(handles.Params, 'cluster')  % GUI only
-                multiWaitbar( textWaitbar, 0.2 );
+          
+            if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                inputstring1 = [Params.FSLFolder, 'bet ', fname1, '.nii ' fname1, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                if ~isfield(handles.Params, 'cluster')  % GUI only
+                    multiWaitbar( textWaitbar, 0.2 );
+                end
+                system(inputstring1);
             end
             
             % added feature to run fsl using wsl on pc
@@ -125,9 +132,13 @@ else
                 % Second mask at later echo, needs to be more conservative
                 % using BET
                 fname2 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(2))];
-                inputstring1 = [Params.FSLFolder, 'bet ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
-                if ~isfield(handles.Params, 'cluster') 
-                    multiWaitbar( textWaitbar, 0.5 );
+
+                if ~isfield(handles.Params, 'FSLBETskip') % default, skip for non_brain data
+                    inputstring1 = [Params.FSLFolder, 'bet ', fname2, '.nii ' fname2, '_brain', ' -f ', Params.FSLThreshold, ' -g 0 -m' ];
+                    if ~isfield(handles.Params, 'cluster') 
+                        multiWaitbar( textWaitbar, 0.5 );
+                    end
+                    system(inputstring1);
                 end
                 
                 % added feature to run fsl using wsl on pc
@@ -229,17 +240,21 @@ else
                     % if using iRSHARP can keep the original BET mask
                     switch Params.BgRemovalMethodsDict{Params.BgRemoval}
                         case {'VSHARP','PDF','LBV+VSHARP'}
+
+                            if ~isfield(handles.Params, 'cluster')
+                                unrelyPhaseThresh = pi/2; % empirical number
+                            else
+                                unrelyPhaseThresh = handles.Params.unrelyPhase0_thresh;
+                            end
+
                             if Params.B0 == 3 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 30e-3));       
-                                unrelyPhaseThresh = pi/2;     % empirical number 
-
+                                
                             elseif Params.B0 == 7 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 18e-3));       
-                                unrelyPhaseThresh = pi/2;   
-                                
+                                                                
                             elseif Params.B0 == 9.4 && length(Params.TEs)>1
                                 [~, echoNumPick] = min(abs(Params.TEs - 12e-3));       
-                                unrelyPhaseThresh = pi/2;      
                             else
                                 echoNumPick = 1;            
                                 unrelyPhaseThresh = pi/4;    

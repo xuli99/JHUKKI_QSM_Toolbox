@@ -67,7 +67,13 @@ elseif isfield(Params, 'sliceOri')
         otherwise
             error('unknown slice orientation.')
     end
-    
+
+    if isfield(Params, 'datatype')
+        if strcmpi(Params.datatype, '2dseq')
+            H0 = [0, 0, 1]';     % for 2dseq, apply TAng on LPS coordinate
+        end
+    end
+
     Hsub = R'*H0;              
     
     R31 = Hsub(1);
