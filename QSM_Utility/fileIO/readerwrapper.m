@@ -266,7 +266,7 @@ elseif (strcmpi(FileExt,'.mat'))
 elseif (strcmpi(FileExt,'.gz') || strcmpi(FileExt, '.nii'))
     
     % nifti file of magnitude/phase pair
-    % read other Params from json file, NIFTI is always in RAS system
+    % read other Params from json file, assume NIFTI is in RAS system
     if contains(FileBaseName, '_GRE_mag')
         FileBaseName = extractBefore(FileBaseName, '_GRE_mag');
     elseif contains(FileBaseName, '_GRE_phase')
@@ -289,7 +289,7 @@ elseif (strcmpi(FileExt,'.gz') || strcmpi(FileExt, '.nii'))
     Params = handles.Params;            % copy other field in handles.Params first
     
     Params.nifti_hdr = nii_phase.hdr;   % nifti head for output, with multi-layer
-    Params.nifti_hdr.dime.dim(5) = 1;         % echo combined
+    Params.nifti_hdr.dime.dim(5) = 1;   % should be echo combined
     Params.nifti_hdr.dime.pixdim(5) = 0;
     Params.nifti_hdr.dime.dim(1) = 3;
 
