@@ -67,11 +67,7 @@ if Params.R2starFlag == 1
         
         nii = load_untouch_nii(BrainMaskFilename);  
         % for RAS NIFTI
-        if isfield(Params, 'nifti_flp')
-            img_data = nii.img;
-            for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
-            nii.img = img_data;
-        end
+        nii = nii_img_update(nii, Params);
 
         maskBET = permute(nii.img, [2,1,3]);            
         maskBET = maskBET > 0;
@@ -169,7 +165,8 @@ end
 %     end
 %     disp('bet done.')
 %     
-%     nii = load_untouch_nii(BrainMaskFilename);      
+%     nii = load_untouch_nii(BrainMaskFilename); 
+%     nii = nii_img_update(nii, Params);
 %     maskBET = permute(nii.img, [2,1,3]);            
 %     maskBET = maskBET > 0;
 % end
@@ -204,12 +201,7 @@ if Params.AutoRefFlag == 1
         disp('GREMagSeg file exists.')
         nii = load_untouch_nii(GREMagSegFileTarget);
         % for RAS NIFTI
-        if isfield(Params, 'nifti_flp')
-            img_data = nii.img;
-            for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
-            nii.img = img_data;
-        end
-        
+        nii = nii_img_update(nii, Params);        
         GREMagSeg = permute(nii.img, [2,1,3]);   
     end
 end

@@ -9,6 +9,7 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     % 2021-01-01, added SliceOriSave
     % 2022-03-22, added option to use loaded NIFTI hdr from DICOM (dicm2nii)
     % 2023-05-08, added option for NIFTI hdr from nifti
+    % 2023-09-11, bug fix for saving NIFTI RAS with flipped slice order
     
     if nargin < 4
         permuteflag = 1;        % default setting, compatible with old version
@@ -37,7 +38,7 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
     if strcmpi(ext, '.nii') || strcmpi(ext, '.nii.gz')
         nii = make_nii(saveVar, Params.voxSize, [], prec);       % single, float 32
 
-        % if Params has saved nifti_hdr 
+        % if Params has saved nifti_hdr, which should be RAS
         if isfield(Params, 'nifti_hdr')
             % check dim
             % nii = nii_tool('init', saveVar);
@@ -49,6 +50,15 @@ function []=saveNII(saveVar, fileName, Params, permuteflag, ext, prec)
             end
 
             if nii.hdr.dime.dim == dim
+                % if Params has nifti_flp_sli, flip slices if needed
+                if isfield(Params, 'nifti_flp_sli')
+                    if Params.nifti_flp_sli     % flip slices to fit nifti_hdr
+                        img_data = nii.img;
+                        img_data = flip(img_data, 3);
+                        nii.img = img_data;
+                    end
+                end
+
                 % flip if needed.
                 if isfield(Params, 'nifti_flp')
                     img_data = nii.img;

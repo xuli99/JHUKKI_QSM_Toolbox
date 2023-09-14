@@ -35,6 +35,8 @@ d. .mat (MATLAB, customized, check "readerwrapper.m" under /QSM_Utilily/fileIO/)
 
 e. Bruker 2dseq data (not fully tested)
 
+f. NIFTI with json files, e.g. converted using dcm2niix, echo combined, with name "*_GRE_mag.nii.gz/*_GRE_phase.nii.gz", see "readerwrapper.m" under /QSM_Utilily/fileIO/
+
 Output file format
 a. internal/final results are saved in MATLAB native format (.mat)
 
@@ -74,6 +76,8 @@ For detailed use of the Toolbox, read the manual (v3.0, will update later)
 
 2021-10-23: Added mcpc-3Ds/ASPIRE for coil-combination
 
+2023-09-12: Added support for NIFTI input files
+
 ## Disclaimer
 This Matlab package is available publicly, in the hope that it will be useful, but without any warranty and without even the implied warranty of merchantability or fitness for a particular purpose. It is designed to help researchers in the field of Magnetic Resonance Imaging who may have interests in doing QSM. It is not intended for use in a clinical setting.
 
@@ -91,4 +95,5 @@ Major GUI and pipeline Authors:
  1. MEDI Toolbox:		http://weill.cornell.edu/mri/pages/qsm.html
  2. Berkin Bilgic Software: 	http://martinos.org/~berkin/software.html
  3. FANSI Toolbox: 		https://gitlab.com/cmilovic/FANSI-toolbox
+ 4. SEPIA Toolbox:      https://github.com/kschan0214/sepia
 

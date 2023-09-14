@@ -15,7 +15,7 @@
 % Date created: 13 June 2018
 % Date last modified:
 %
-% modifed by X.L.
+% modifed by X.L., using jsondecode
 
 function [TE] = readTE_dcm2niix_JSON(filenames)
 
@@ -27,39 +27,14 @@ TE =[];
 for kf = 1:length(filenames)
     filename = filenames{kf};
     
-    % read mode
-    fid = fopen(filename,'r');
-    % read file line by line
-    line = fgetl(fid);
-    % set counter of TE
-    counter = 1;
-    
-    % start reading lines
-    while ischar(line)
+    % using jsondecode
+    text_json = fileread(filename);
+    value_json = jsondecode(text_json);
 
-        % look for string 'Echo time'
-        if contains(line, 'EchoTime')
-            % in dcm2niix format echo time stored in unit of s, has to
-            % convert to second
-            TE = [TE, get_str(line)];
-            % prepare next TE
-            counter = counter + 1;
-        end
-        % start the next line
-        line = fgetl(fid);
-    end
+    TE = [TE, value_json.EchoTime];     % in sec
 
-    fclose(fid);
 end
 
 TE = sort(TE,'ascend');
 
-end
-
-%% Get value of the tag 
-function str=get_str(list_info)
-    % find chars ': '
-    k_b = strfind(list_info,': ');
-    % account for two chars ':' and ' '
-    str=str2double(list_info(k_b(1)+2:end));
 end

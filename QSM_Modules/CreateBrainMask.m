@@ -127,11 +127,7 @@ else
 
             nii = load_untouch_nii(output); 
             % for RAS NIFTI
-            if isfield(Params, 'nifti_flp')
-                img_data = nii.img;
-                for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
-                nii.img = img_data;
-            end
+            nii = nii_img_update(nii, Params);
 
             maskBET1 = permute(nii.img, [2,1,3]);       
             maskBET1 = maskBET1 > 0;
@@ -165,11 +161,7 @@ else
 
                 nii = load_untouch_nii(output);
                 % for RAS NIFTI
-                if isfield(Params, 'nifti_flp')
-                    img_data = nii.img;
-                    for k = 1:3, if Params.nifti_flp(k), img_data = flip(img_data, k); end; end
-                    nii.img = img_data;
-                end
+                nii = nii_img_update(nii, Params);
 
                 maskBET2 = permute(nii.img, [2,1,3]);
                 maskBET2 = maskBET2 > 0;
@@ -190,6 +182,7 @@ else
 %             % Hacking mask with Animal data
 %             fname2 = [ Params.FileBaseName '_GREMag', num2str(Params.SaveEcho(1)), '_Manual'];
 %             nii = load_untouch_nii([fname2, '.nii.gz']); 
+%             nii = nii_img_update(nii, Params)
 %             % may need to check RAS NIFTI
 %             maskErode = permute(nii.img, [2,1,3]); maskErode=maskErode>0;            
                         

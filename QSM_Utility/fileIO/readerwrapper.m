@@ -17,6 +17,7 @@ function [GREMag, GREPhase, Params, handles] = readerwrapper(PathName, FileName,
 % updated 2023-02-02, for PAR/REC data without Phase Recon but with R/I
 % updated 2023-05-07, added nifti support, nifti combined from dcm2niix
 %                       output, see GRE_preparation_2nifti.m
+% updated 2023-09-13, updated file requirements for nifti format
 
 [~,FileBaseName,FileExt] = fileparts(FileName);
 
@@ -256,7 +257,8 @@ elseif (strcmpi(FileExt,'.mat'))
         % check read_DICOM.m and read_DICOM.py
         Params.nifti_hdr = S.Params.nifti_hdr;
         Params.nifti_flp = S.Params.nifti_flp;
-        Params.nifti_affine = S.Params.nifti_affine;
+        Params.nifti_affine = S.Params.nifti_affine;        
+        Params.nifti_flp_sli = S.Params.nifti_flp_sli;
     end
 
     if isfield(S.Params, 'datatype')
@@ -266,7 +268,9 @@ elseif (strcmpi(FileExt,'.mat'))
 elseif (strcmpi(FileExt,'.gz') || strcmpi(FileExt, '.nii'))
     
     % nifti file of magnitude/phase pair
-    % read other Params from json file, assume NIFTI is in RAS system
+    % read other Params from the correspoinding .mat file
+    % which is extracted from json files, assume NIFTI is in default RAS system
+
     if contains(FileBaseName, '_GRE_mag')
         FileBaseName = extractBefore(FileBaseName, '_GRE_mag');
     elseif contains(FileBaseName, '_GRE_phase')
@@ -280,49 +284,40 @@ elseif (strcmpi(FileExt,'.gz') || strcmpi(FileExt, '.nii'))
     GREMag = permute(nii_mag.img, [2,1,3:ndims(nii_mag.img)]);
     GREPhase = permute(nii_phase.img, [2,1,3:ndims(nii_phase.img)]);
 
-    % in case dcm2niix -p y failed the correct scaling
-    if max(GREPhase(:)) > 100
-        % GREPhase = GREPhase.*nii_phase.hdr.dime.scl_slope + nii_phase.hdr.dime.scl_inter;
-        error('GRE phase was scaled incorrectly ...')
-    end
+    S = load([PathName FileBaseName, '_header.mat']);      
 
     Params = handles.Params;            % copy other field in handles.Params first
     
-    Params.nifti_hdr = nii_phase.hdr;   % nifti head for output, with multi-layer
-    Params.nifti_hdr.dime.dim(5) = 1;   % should be echo combined
-    Params.nifti_hdr.dime.pixdim(5) = 0;
-    Params.nifti_hdr.dime.dim(1) = 3;
+    % copy fields
+    if isfield(S, 'Params')
+        fn_list = fieldnames(S.Params);
+        for fn_idx = 1:length(fn_list)
+            Params.(fn_list{fn_idx}) = S.Params.(fn_list{fn_idx});
+        end
+%         Params.nifti_hdr = S.Params.nifti_hdr;
+%         Params.TEs       = S.Params.TEs;
+%         Params.B0        = S.Params.B0;
+%         Params.TR        = S.Params.TR;
+%         Params.sizeVol   = S.Params.sizeVol;
+%         Params.voxSize   = S.Params.voxSize;
+%         Params.fov       = S.Params.fov;
+%         Params.nDynamics = S.Params.nDynamics;
 
-    % read TE from json file
-    json_list = dir(fullfile(PathName, [FileBaseName, '*_ph.json']));
-    json_filenames = cell(length(json_list), 1);
-    for json_ii = 1:length(json_list)
-        json_filenames{json_ii} = fullfile(json_list(json_ii).folder, json_list(json_ii).name);
+    else
+        error('header file missing Params variable.')
     end
-    Params.TEs = readTE_dcm2niix_JSON(json_filenames);
-    Params.nEchoes = length(Params.TEs);
 
-    % read other params from json file, B0, TR etc.
-    Params = readParams_dcm2niix_JSON(json_filenames{1}, Params);
+    % permute
+    Params = permuteParams(Params);
+
+    Params.PathName = PathName;
+    Params.FileBaseName = FileBaseName;
 
     if ~isfield(handles.Params, 'cluster')  % GUI only
         if isfield(Params, 'B0')
             set(handles.VarB0,'String', Params.B0);     
         end
     end
-
-    Params.sizeVol = nii_mag.hdr.dime.dim(2:4);  % 2-4, pixdim, 5:echoes, 6:dynamics?
-    Params.voxSize = nii_mag.hdr.dime.pixdim(2:4);
-    Params.fov = Params.sizeVol.*Params.voxSize;
-    Params.nDynamics = nii_mag.hdr.dime.dim(6);  % need check 
-
-    % permute
-    Params = permuteParams(Params);
-
-    [Params.b0dir, Params.TAng] = get_B0_dir_from_nifti(nii_mag);
-
-    Params.PathName = PathName;
-    Params.FileBaseName = FileBaseName;
 
 else
     error('Sorry, we can not open this type of file...');

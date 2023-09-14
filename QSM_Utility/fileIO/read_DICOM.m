@@ -41,6 +41,7 @@ function [GREPhase, GREMag,Params] = read_DICOM(DICOMdir, Params, verbose)
 % Updated 2021-11-18, bug fix
 % Updated 2022-03-23, X.L. added option to use RAS NIFTI
 % Updated 2022-11-28, X.L. deal with non-image DICOM files
+% Updated 2023-09-11, X.L. bug fix for saving NIFTI RAS from DICOM LPS
 
 if nargin < 1
     % uigetdir get the DICOMdir
@@ -224,12 +225,12 @@ end
 slicenorm = (maxLoc - minLoc)/(Params.sizeVol(3)-1);
 
 reverse_flag = 0;
-if dot(Params.TAng(:,3), slicenorm) < 0  % needed to reverse slice stack
+if dot(Params.TAng(:,3), slicenorm) < 0  % needed to reverse slice stack for LPS
     reverse_flag = 1;
 end
 
-% % ----- NIFTI affine and hdr, tested for SIEMENS data only
-if Manufacturer == 1
+% % ----- NIFTI affine and hdr, tested for SIEMENS/PHILIPS data only
+if Manufacturer <= 2
     testmat = abs(Params.TAng);
     [~, ixyz] = max(testmat);
     if ixyz(2) == ixyz(1), testmat(ixyz(2), 2) = 0; [~, ixyz(2)] = max(testmat(:,2)); end
@@ -239,7 +240,7 @@ if Manufacturer == 1
     dim = Params.sizeVol;
     R = [Params.TAng * diag(pixdim) minLoc];
     R(:,3) = slicenorm;
-    R(1:2,:) = -R(1:2, :);
+    R(1:2,:) = -R(1:2, :);  % LPS to RAS
     
     flp = R(ixyz+[0 3 6])<0; % flip an axis if true
     d = det(R(:,1:3)) * prod(1-flp*2); % det after all 3 axis positive
@@ -278,6 +279,7 @@ if Manufacturer == 1
     Params.nifti_affine  = img_affine;
     Params.nifti_flp     = flp;
     Params.nifti_hdr     = nii.hdr;
+    Params.nifti_flp_sli = reverse_flag;
 end
 
 %% read in imaging data
@@ -387,7 +389,8 @@ if Manufacturer == 4        % TOSHIBA data is flipped?
     GREPhase = flip(GREPhase, 3);
 end
 
-% reverse slice stack
+% reverse slice stack to make LPS, saved to Params.nifti_flp_sli, flip back
+% for NIFTI format with saved nifti_hdr 
 if reverse_flag == 1
     GREMag = GREMag(:,:,end:-1:1,:,:,:);
     GREPhase = GREPhase(:,:,end:-1:1,:,:,:);
