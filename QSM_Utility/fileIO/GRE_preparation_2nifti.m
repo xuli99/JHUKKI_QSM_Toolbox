@@ -36,7 +36,8 @@ for dcm_ii = 1:length(dcm)
     dcm_name = dcm{dcm_ii};
 
     if isfile(dcm_name)
-        dcm_pdir = dir(dcm_name).folder;                    % for enhanced DICOM
+        dcm_name_dir = dir(dcm_name);                    % for enhanced DICOM
+        dcm_pdir = dcm_name_dir.folder;
     elseif isfolder(dcm_name)
         if dcm_name(end) == filesep, dcm_name = dcm_name(1:end-1); end
         dcm_pdir_parts = strsplit(dcm_name, filesep);       % for classical DICOM dir

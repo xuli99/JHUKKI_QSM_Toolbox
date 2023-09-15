@@ -286,6 +286,11 @@ end
 if Manufacturer ~= 3   % for SIEMENS or PHILIPS or TOSHIBA, can read in Mag & Phase directly
     GREPhase = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
     GREMag = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
+
+%     % ****** In case there is no Phase, but with only Real/Imaginary for testing ******     
+%     GREReal = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
+%     GREImag = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
+    
 else
     % For GE data, read in Real/Imaginary then convert to Mag/Phase
     GREReal = single(zeros([Params.sizeVol NumEcho, Params.DynamicNum, Params.coilNum]));
@@ -342,7 +347,15 @@ for i = 1:length(filelist)
 
         elseif strcmpi(info.ImageType(18), 'M') || contains(info.ImageType, '\M\')         % magnitude
             GREMag(:,:,slice,info.EchoNumber, dynamic, coil)  = single(dicomread(fullfile(DICOMdir, filelist(i).name))');     %magnitude
+
+%        % ****** for testing  
+%         elseif strcmpi(info.ImageType(18), 'R') || contains(info.ImageType, '\R\')         % real
+%             GREReal(:,:,slice,info.EchoNumber, dynamic, coil)  = (single(dicomread(fullfile(DICOMdir, filelist(i).name))')*info.RescaleSlope+info.RescaleIntercept);    %real
+% 
+%         elseif strcmpi(info.ImageType(18), 'I') || contains(info.ImageType, '\I\')         % imaginary
+%             GREImag(:,:,slice,info.EchoNumber, dynamic, coil)  = (single(dicomread(fullfile(DICOMdir, filelist(i).name))')*info.RescaleSlope+info.RescaleIntercept);    %imaginary
         end
+
     elseif Manufacturer == 3
         % for GE data
         if mod(info.InstanceNumber,4)==0
@@ -388,6 +401,10 @@ if Manufacturer == 4        % TOSHIBA data is flipped?
     GREMag = flip(GREMag, 3);
     GREPhase = flip(GREPhase, 3);
 end
+
+% % ****** for testing  
+% temp = GREReal + 1i.*GREImag;
+% GREPhase = angle(temp);
 
 % reverse slice stack to make LPS, saved to Params.nifti_flp_sli, flip back
 % for NIFTI format with saved nifti_hdr 
