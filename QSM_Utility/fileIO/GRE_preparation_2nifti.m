@@ -57,7 +57,8 @@ for dcm_ii = 1:length(dcm)
         output_dir_internal = output_dir;
     end
 
-    cmd = [dcm2niix_path, 'dcm2niix -z y -v y -w 1 -f %p_%s -p y -o ', output_dir_internal, ' ', dcm_name];
+    % for debuging add -v y
+    cmd = [dcm2niix_path, 'dcm2niix -z y -v n -w 1 -f %p_%s -p y -o ', output_dir_internal, ' ', dcm_name];
     system(cmd);
 
     % combine nifti file from each echo    
