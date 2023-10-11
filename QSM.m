@@ -7,7 +7,7 @@ function varargout = QSM(varargin)
 
 % Edit the above text to modify the response to help QSM
 
-% Last Modified by GUIDE v2.5 08-Jul-2019 17:13:13
+% Last Modified by GUIDE v2.5 10-Oct-2023 13:03:40
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -105,6 +105,8 @@ switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod}
     otherwise
         error('Unknown unwrapping method.')        
 end
+
+Params.TemplateEcho = str2double(get(handles.VarTemplateEcho, 'String'));
 
 % 2. Get variable for BrainMask
 Params.SaveEcho = eval(get(handles.VarMaskEchoes, 'String'));
@@ -398,6 +400,17 @@ handles.Params.UnwrappingMethod   = get(hObject,'Value');   % 1: Lap 2: Nonlinea
 % Save
 guidata(hObject, handles);
 
+contents = cellstr(get(hObject,'String'));
+% set method combinations
+% if Path --> show TemplateEcho option
+if matches(contents{get(hObject,'Value')}, 'Path')
+    set([handles.Tag_TemplateEcho_text], 'Visible', 'on')
+    set([handles.VarTemplateEcho], 'Visible', 'on')
+else
+    set([handles.Tag_TemplateEcho_text], 'Visible', 'off')
+    set([handles.VarTemplateEcho], 'Visible', 'off')
+end
+
 % --- Executes during object creation, after setting all properties.
 function VarUnwrappingMethod_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to VarUnwrappingMethod (see GCBO)
@@ -469,4 +482,18 @@ else
     else
         set([handles.checkboxAutoRef], 'Value', 0)
     end
+end
+
+function VarTemplateEcho_Callback(hObject, eventdata, handles)
+% hObject    handle to VarTemplateEcho (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of VarTemplateEcho as text
+%        str2double(get(hObject,'String')) returns contents of VarTemplateEcho as a double
+
+% Check Values
+TemplateEcho = str2double(get(hObject,'String'));
+if TemplateEcho > handles.Params.nEchoes || TemplateEcho < 0
+    errordlg('Invalide Template Echo.', 'Error in Entered Values');
 end

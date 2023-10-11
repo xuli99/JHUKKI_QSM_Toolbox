@@ -97,9 +97,12 @@ if(FileName ~= 0)
     set(handles.ButtonShowRawPhase, 'Enable', 'On')
     set([handles.ButtonAddDataset handles.ButtonStartDatasets handles.ButtonLoadDataList], 'Enable', 'Off');
     
-    % if num of echoes is smaller than 2, cannot fit R2*
+    % if num of echoes is smaller than 2, cannot fit R2*, cannot use
+    % template unwrapping
     if Params.nEchoes < 2
         set([handles.checkboxR2star], 'Visible', 'Off')
+        set([handles.Tag_TemplateEcho_text], 'Visible', 'off')
+        set([handles.VarTemplateEcho], 'Visible', 'off')
     end
     
     % for dynamic data, don't fit R2*

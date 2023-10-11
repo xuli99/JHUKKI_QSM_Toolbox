@@ -25,6 +25,7 @@ handles.VarQSMSolver.Value          = 5;           % default, select according t
 % Phase pre-processing
 handles.Params.UnwrappingMethod     = handles.VarUnwrappingMethod.Value;
 handles.Params.phase2DprocFlag      = 0;           % default, edit, 0-1 
+handles.Params.TemplateEcho         = 1;           % default, edit, 0-1, using template unwrapping
 
 % Echo selection
 handles.Params.echoStart            = 3;           % Edit for selecting starting echo
@@ -48,6 +49,7 @@ handles.Params.unrelyPhase2_thresh  = 0.1;            % after BR, default 0.5
 
 % Echo Average
 handles.Params.EchoAvg              = 1;              % default, edit, 0/1
+handles.Params.AvgBeforeBR          = 1;              % default, edit, 0/1 
 
 % Background Removal
 handles.Params.BgRemoval            = handles.VarBgRemoval.Value;

@@ -8,6 +8,7 @@
 % Updated 2021-06-27 X.L., cluster version
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
 % Updated 2023-06-01 X.L., saving format update
+% Updated 2023-10-09 X.L., adding template unwrapping for path-based method 
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -101,22 +102,26 @@ else
         case 'Laplacian'
             for dynamic_ind = 1:Params.nDynamics
                 for echo_ind = 1:length(Params.TEs)
-                    % Unwrapping all the echoes
-                    if Params.phase2DprocFlag == 0  
-                        % default is 3D
-                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
-                    else
-%                         % 2D phase unwrapping slice by slice
-%                         textWaitbar2D = 'Performing 2D phase unwrapping first';
-%                         multiWaitbar(textWaitbar2D, 0, 'Color', 'b' );
-%                         
-%                         % 2D unwrapping not good
-%                         for sliceii = 1:Params.sizeVol(3)
-%                             GREPhase(:,:,sliceii,echo_ind,dynamic_ind) = phase_unwrap_laplacian_2D(GREPhase(:,:,sliceii,echo_ind,dynamic_ind), Params, 0, 2);  % no refVox
-%                             multiWaitbar(textWaitbar2D, sliceii/Params.sizeVol(3), 'Color', 'b' );
-%                         end            
-                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
-                    end
+
+%                     % Unwrapping all the echoes
+%                     if Params.phase2DprocFlag == 0  
+%                         % default is 3D
+%                         GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
+%                     else
+% %                         % 2D phase unwrapping slice by slice
+% %                         textWaitbar2D = 'Performing 2D phase unwrapping first';
+% %                         multiWaitbar(textWaitbar2D, 0, 'Color', 'b' );
+% %                         
+% %                         % 2D unwrapping not good
+% %                         for sliceii = 1:Params.sizeVol(3)
+% %                             GREPhase(:,:,sliceii,echo_ind,dynamic_ind) = phase_unwrap_laplacian_2D(GREPhase(:,:,sliceii,echo_ind,dynamic_ind), Params, 0, 2);  % no refVox
+% %                             multiWaitbar(textWaitbar2D, sliceii/Params.sizeVol(3), 'Color', 'b' );
+% %                         end            
+%                         GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
+%                     end
+                    
+                    GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_laplacian(GREPhase(:,:,:,echo_ind,dynamic_ind), Params, RefVox, 2);
+
                     if ~isfield(handles.Params, 'cluster')  % GUI only 
                         % Waitbar        
                         hasCanceled = multiWaitbar( textWaitbar, (echo_ind/length(Params.TEs))*(dynamic_ind/Params.nDynamics));
@@ -176,16 +181,53 @@ else
                 RefVox = [floor(N(1)/2), floor(N(2)/2), floor(N(3)/2)]; 
             end
 
+            nEchoes = Params.nEchoes;
             for dynamic_ind = 1:Params.nDynamics
-                for echo_ind = 1:length(Params.TEs)
+                % unwrap each echo
+                for echo_ind = 1:nEchoes
                     GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                    % display progress
                     if ~isfield(handles.Params, 'cluster')  % GUI only
-                        hasCanceled = multiWaitbar( textWaitbar, (echo_ind/length(Params.TEs))*(dynamic_ind/Params.nDynamics));
+                        hasCanceled = multiWaitbar( textWaitbar, (echo_ind/nEchoes)*(dynamic_ind/Params.nDynamics));
                     else
-                        disp([num2str(100*((echo_ind/length(Params.TEs))*(dynamic_ind/Params.nDynamics))), '% Done.']);
+                        disp([num2str(100*((echo_ind/nEchoes)*(dynamic_ind/Params.nDynamics))), '% Done.']);
                     end
                     GREPhase(:,:,:,echo_ind,dynamic_ind) = GREPhase(:,:,:,echo_ind,dynamic_ind) -  GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind,dynamic_ind);
                 end
+
+                % using template unwrapping to increase robustness
+                if Params.TemplateEcho > 0
+                    disp('Doing template unwrapping.')
+                    % use template unwrapping
+                    % unwrap template echo first
+                    UnwrapFlag = zeros(nEchoes, 1); 
+                    % GREPhase(:,:,:,Params.TemplateEcho,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,Params.TemplateEcho,dynamic_ind));
+                    UnwrapFlag(Params.TemplateEcho) = 1;
+
+                    % unwrap former echoes
+                    for echo_ind = [Params.TemplateEcho:-1:1, Params.TemplateEcho:nEchoes]
+                        if UnwrapFlag(echo_ind) < 1
+
+                            if echo_ind < Params.TemplateEcho
+                                % unwrap echo_ind from echo_ind+1
+                                phaseTemplate = GREPhase(:,:,:,echo_ind+1,dynamic_ind); TE_Template = Params.TEs(echo_ind+1);
+                            elseif echo_ind > Params.TemplateEcho    
+                                % unwrap echo_ind from echo_ind-1
+                                phaseTemplate = GREPhase(:,:,:,echo_ind-1,dynamic_ind); TE_Template = Params.TEs(echo_ind-1);
+            
+                            end
+                            phaseToUnwrap = GREPhase(:,:,:,echo_ind,dynamic_ind); TE_ToUnwrap = Params.TEs(echo_ind);
+                            
+                            GREPhase(:,:,:,echo_ind,dynamic_ind) = ...
+                                phaseToUnwrap - (2*pi)*(round((phaseToUnwrap - phaseTemplate*TE_ToUnwrap/TE_Template)/(2*pi)));
+
+                            UnwrapFlag(echo_ind) = 1; % mark
+                        end
+
+                    end
+
+                end
+
             end
 
         case 'ROMEO'
