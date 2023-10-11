@@ -8,7 +8,7 @@
 % Updated 2021-06-28, X.L., cluster version
 % Updated 2021-08-20, X.L., bug fix for dyanmic data
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
-% Updated 2023-10-10 X.L., added option for averaging before bg removal 
+% Updated 2023-10-11 X.L., added option for averaging before bg removal 
 
 %% Get variables
 Params      = handles.Params;
@@ -179,7 +179,7 @@ else
         freqMap = zeros([Params.sizeVol, 1, Params.nDynamics]); 
 
         % Average Before Background Removal
-        if Params.AvgBeforeBR > 0
+        if Params.EchoAvg > 0 && Params.AvgBeforeBR > 0
             GREPhase = mean(GREPhase(:,:,:,Params.echoNums,:), 4);
             Params.echoNums = 1;
             disp('Echo averaged.')

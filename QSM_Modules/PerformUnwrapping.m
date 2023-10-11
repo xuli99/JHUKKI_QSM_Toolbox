@@ -198,34 +198,7 @@ else
                 % using template unwrapping to increase robustness
                 if Params.TemplateEcho > 0
                     disp('Doing template unwrapping.')
-                    % use template unwrapping
-                    % unwrap template echo first
-                    UnwrapFlag = zeros(nEchoes, 1); 
-                    % GREPhase(:,:,:,Params.TemplateEcho,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,Params.TemplateEcho,dynamic_ind));
-                    UnwrapFlag(Params.TemplateEcho) = 1;
-
-                    % unwrap former echoes
-                    for echo_ind = [Params.TemplateEcho:-1:1, Params.TemplateEcho:nEchoes]
-                        if UnwrapFlag(echo_ind) < 1
-
-                            if echo_ind < Params.TemplateEcho
-                                % unwrap echo_ind from echo_ind+1
-                                phaseTemplate = GREPhase(:,:,:,echo_ind+1,dynamic_ind); TE_Template = Params.TEs(echo_ind+1);
-                            elseif echo_ind > Params.TemplateEcho    
-                                % unwrap echo_ind from echo_ind-1
-                                phaseTemplate = GREPhase(:,:,:,echo_ind-1,dynamic_ind); TE_Template = Params.TEs(echo_ind-1);
-            
-                            end
-                            phaseToUnwrap = GREPhase(:,:,:,echo_ind,dynamic_ind); TE_ToUnwrap = Params.TEs(echo_ind);
-                            
-                            GREPhase(:,:,:,echo_ind,dynamic_ind) = ...
-                                phaseToUnwrap - (2*pi)*(round((phaseToUnwrap - phaseTemplate*TE_ToUnwrap/TE_Template)/(2*pi)));
-
-                            UnwrapFlag(echo_ind) = 1; % mark
-                        end
-
-                    end
-
+                    GREPhase(:,:,:,:,dynamic_ind) = phase_unwrap_template(GREPhase(:,:,:,:,dynamic_ind), Params.TEs, Params.TemplateEcho);
                 end
 
             end

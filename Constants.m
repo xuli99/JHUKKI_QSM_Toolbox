@@ -3,7 +3,7 @@
 % Updated by Xu Li, 2019-06-20
 % Updated by Xu Li, 2021-06-23 for cluster version
 % Updated by Xu Li, 2023-06-01 added wsl support for pc
-% Updated by Xu Li, 2023-10-09 added default values for TemplateEcho and AvgBeforeBR
+% Updated by Xu Li, 2023-10-11 added default values for TemplateEcho and AvgBeforeBR
 
 handles.Params.QSMdir           = fileparts(mfilename('fullpath'));
 handles.Params.QSMSettingsFile  = fullfile(handles.Params.QSMdir, '/QSM_ConstantsSaved.mat');
@@ -66,7 +66,7 @@ else
     handles.Params.FSLFolder        = fullfile(fsldir, 'bin/'); 
     handles.Params.FSLThreshold     = 0.4;  % default BET threshold
 
-    handles.Params.TemplateEcho     = 1;    % default using 1st echo
+    handles.Params.TemplateEcho     = 2;    % default using 2nd echo if with ME
     handles.Params.AvgBeforeBR      = 1;    % default Avg before Background Removal
     handles.Params.EchoAvg          = 1;    % defualt using EchoAvg
     handles.Params.ErodeRadius      = 1;    % mm, mask erosion

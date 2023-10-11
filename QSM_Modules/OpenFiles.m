@@ -5,6 +5,7 @@
 % updated 2019-07-09, X.L.
 % updated 2021-05-04, X.L. fixed a bug
 % updated 2021-08-11, X.L. fixed mac issue
+% updated 2023-10-11, X.L. moved parameter update code here from CreateFcns
 
 % Open file
 if ismac
@@ -54,13 +55,21 @@ if(FileName ~= 0)
         set(handles.TextEchoInfo, 'String',  sprintf('Using echo  1  (TE %0.3g ms)',Params.TEs(1)*1000));
     end
     
+    % Fill-in initial Parameters if loaded from Constants otherwise default
+    % (moved from CreateFcns)
+    set(handles.CheckSaveData,'Value', handles.Params.saveOutput);
+    set(handles.VarTemplateEcho, 'String', num2str(handles.Params.TemplateEcho))
+
     % Fill masking echo
     handles.Params.SaveEcho = Params.echoNums(1);
     set(handles.VarMaskEchoes,'String',sprintf('[%d]',Params.echoNums(1)));
     
-    % Fill in FSL folders
-    set(handles.VarFSL, 'String', Params.FSLFolder);
-        
+    % Fill in FSL folders, masking and SHARP parameter
+    set(handles.VarFSL, 'String', handles.Params.FSLFolder);
+    set(handles.VarFSLThres,'String', num2str(handles.Params.FSLThreshold));
+    set(handles.VarRadiusDisk,'String',num2str(handles.Params.ErodeRadius));
+    set([handles.VarSHARPradius],'String',num2str(handles.Params.SHARPradius));
+
     % Find Method Strings Dict
     Params.UnwrappingMethodsDict    = get(handles.VarUnwrappingMethod, 'String');
     Params.BgRemovalMethodsDict     = get(handles.VarBgRemoval, 'String');
@@ -103,6 +112,7 @@ if(FileName ~= 0)
         set([handles.checkboxR2star], 'Visible', 'Off')
         set([handles.Tag_TemplateEcho_text], 'Visible', 'off')
         set([handles.VarTemplateEcho], 'Visible', 'off')
+        handles.Params.TemplateEcho = 0;
     end
     
     % for dynamic data, don't fit R2*

@@ -7,7 +7,7 @@ function varargout = QSM(varargin)
 
 % Edit the above text to modify the response to help QSM
 
-% Last Modified by GUIDE v2.5 10-Oct-2023 13:03:40
+% Last Modified by GUIDE v2.5 11-Oct-2023 12:22:26
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -55,6 +55,8 @@ varargout{1} = handles.output;
 
 % --- Executes on button press in ButtonSelectFile.
 function ButtonSelectFile_Callback(hObject, eventdata, handles)
+% Load constants
+Constants;
 % Open files
 OpenFiles;
 
@@ -166,85 +168,6 @@ set(handles.VarMaskEchoes,'String',sprintf('[%d]',handles.Params.echoNums(1)));
 % Save
 guidata(hObject, handles);
 
-
-% --- Executes during object creation, after setting all properties.
-function VarB0_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-% Load constants
-Constants;
-% Set constant
-set(hObject,'String',handles.Params.B0);
-
-% --- Executes during object creation, after setting all properties.
-function VarRadiusDisk_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-% Set constant
-set(hObject,'String',num2str(handles.Params.ErodeRadius));
-
-
-% --- Executes on key press with focus on VarRadiusDisk and none of its controls.
-function VarRadiusDisk_KeyPressFcn(hObject, eventdata, handles)
-% Act on right key
-if(~isempty(eventdata.Key))
-    handles.Params.ErodeRadius = str2double(eventdata.Key);    % catches each key input
-end
-% Save
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function VarMaskEchoes_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% --- Executes during object creation, after setting all properties.
-function VarFSL_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
-% Set constant
-set(hObject,'String',handles.Params.FSLFolder);
-
-% --- Executes during object creation, after setting all properties.
-function CheckSaveData_CreateFcn(hObject, eventdata, handles)
-% Basic value
-set(hObject,'Value',handles.Params.saveOutput);
-
-% --- Executes during object creation, after setting all properties.
-function VarSHARPradius_CreateFcn(hObject, eventdata, handles)
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-% Basic value
-set(hObject,'String',num2str(handles.Params.SHARPradius));
-
-
-% --- Executes on key press with focus on VarSHARPradius and none of its controls.
-function VarSHARPradius_KeyPressFcn(hObject, eventdata, handles)
-% Act on right key
-if(~isempty(eventdata.Key))
-    handles.Params.SHARPradius = str2double(eventdata.Key);     % catches each key input, but needs full string
-end
-% Save
-guidata(hObject, handles);
-
-% --- Executes during object creation, after setting all properties.
-function VarQSMSolver_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to VarQSMSolver (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-
 % for displaying image slices after all the calculations ...
 % --- Executes on button press in ButtonShowRawPhase.
 function ButtonShowRawPhase_Callback(hObject, eventdata, handles)
@@ -271,18 +194,15 @@ function ButtonShowQSM_Callback(hObject, eventdata, handles)
 % Set QSM
 LoadImage(hObject, handles, handles.chi_res, 'Susceptibility (ppm)');
 
-
 % --- Executes on button press in ButtonAdjustContrast.
 function ButtonAdjustContrast_Callback(hObject, eventdata, handles)
 % Start that contrast thing
 % set(handles.ImageContainer,'CLim', handles.ImageCLim);
 imcontrast(handles.ImageContainer);
 
-
 % --- Executes on button press in ButtonAddDataset.
 function ButtonAddDataset_Callback(hObject, eventdata, handles)
 AddDatasets;
-
 
 % --- Executes on button press in ButtonStartDatasets.
 function ButtonStartDatasets_Callback(hObject, eventdata, handles)
@@ -332,62 +252,6 @@ catch
     % Nothing
 end
 
-
-% --- Executes during object creation, after setting all properties.
-function VarFSLThres_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to VarFSLThres (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: edit controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
-% Set constant
-set(hObject,'String', num2str(handles.Params.FSLThreshold));
-
-% --- Executes on button press in checkbox2Dproc.
-function checkbox2Dproc_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox2Dproc (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-handles.Params.phase2DprocFlag = get(hObject,'Value');
-% Save
-guidata(hObject, handles);
-
-
-% --- Executes on selection change in VarBgRemoval.
-function VarBgRemoval_Callback(hObject, eventdata, handles)
-% hObject    handle to VarBgRemoval (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns VarBgRemoval contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from VarBgRemoval
-handles.Params.BgRemoval   = get(hObject,'Value');
-% Save
-guidata(hObject, handles);
-
-
-function VarFSLThres_Callback(hObject, eventdata, handles)
-% hObject    handle to VarFSLThres (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: get(hObject,'String') returns contents of VarFSLThres as text
-%        str2double(get(hObject,'String')) returns contents of VarFSLThres as a double
-
-
-function checkbox_EchoAvg_Callback(hObject, eventdata, handles)
-% hObject    handle to checkbox_EchoAvg
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-handles.Params.EchoAvg = get(hObject,'Value');
-% Save
-guidata(hObject, handles);
-
-
 % --- Executes on selection change in VarUnwrappingMethod.
 function VarUnwrappingMethod_Callback(hObject, eventdata, handles)
 % hObject    handle to VarUnwrappingMethod (see GCBO)
@@ -411,17 +275,17 @@ else
     set([handles.VarTemplateEcho], 'Visible', 'off')
 end
 
-% --- Executes during object creation, after setting all properties.
-function VarUnwrappingMethod_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to VarUnwrappingMethod (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
-
-% Hint: popupmenu controls usually have a white background on Windows.
-%       See ISPC and COMPUTER.
-if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
-    set(hObject,'BackgroundColor','white');
-end
+% % --- Executes during object creation, after setting all properties.
+% function VarUnwrappingMethod_CreateFcn(hObject, eventdata, handles)
+% % hObject    handle to VarUnwrappingMethod (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    empty - handles not created until after all CreateFcns called
+% 
+% % Hint: popupmenu controls usually have a white background on Windows.
+% %       See ISPC and COMPUTER.
+% if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+%     set(hObject,'BackgroundColor','white');
+% end
 
 
 % --- Executes on button press in ButtonLoadDataList.
@@ -437,7 +301,6 @@ function checkboxR2star_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 % Hint: get(hObject,'Value') returns toggle state of checkboxR2star
-handles.Params.R2starFlag = get(hObject,'Value');
 
 % if SFCR/nSFCR show option of AutoRef. 
 QSMSolverDict = cellstr(get(handles.VarQSMSolver, 'String'));
@@ -448,16 +311,6 @@ else
     set([handles.checkboxAutoRef], 'Value', 0)
 end
 
-% Save
-guidata(hObject, handles);
-
-% --- Executes on button press in checkboxAutoRef.
-function checkboxAutoRef_Callback(hObject, eventdata, handles)
-% hObject    handle to checkboxAutoRef (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-% Hint: get(hObject,'Value') returns toggle state of checkboxAutoRef
-handles.Params.AutoRefFlag = get(hObject,'Value');
 % Save
 guidata(hObject, handles);
 
