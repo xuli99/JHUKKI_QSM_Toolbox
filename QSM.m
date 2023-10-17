@@ -303,8 +303,11 @@ function checkboxR2star_Callback(hObject, eventdata, handles)
 % Hint: get(hObject,'Value') returns toggle state of checkboxR2star
 
 % if SFCR/nSFCR show option of AutoRef. 
-QSMSolverDict = cellstr(get(handles.VarQSMSolver, 'String'));
-if handles.Params.R2starFlag == 1 && contains(QSMSolverDict(get(handles.VarQSMSolver, 'Value')), 'SFCR')
+QSMSolverDict   = cellstr(get(handles.VarQSMSolver, 'String'));
+QSMSolver       = get(handles.VarQSMSolver,'Value');
+R2starFlag      = get(hObject, 'Value');
+
+if R2starFlag == 1 && contains(QSMSolverDict(QSMSolver), 'SFCR')
     set([handles.checkboxAutoRef], 'Visible', 'On')
 else
     set([handles.checkboxAutoRef], 'Visible', 'Off')
