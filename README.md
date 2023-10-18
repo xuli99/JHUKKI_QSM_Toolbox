@@ -35,7 +35,7 @@ d. .mat (MATLAB, customized, check "readerwrapper.m" under /QSM_Utilily/fileIO/)
 
 e. Bruker 2dseq data (not fully tested)
 
-f. NIFTI with json files, e.g. converted using dcm2niix, echo combined, with name "*_GRE_mag.nii.gz/*_GRE_phase.nii.gz", see "readerwrapper.m" under /QSM_Utilily/fileIO/
+f. NIFTI files, e.g. converted using dcm2niix, echo combined, with name "*_GRE_mag.nii.gz/*_GRE_phase.nii.gz", see "GRE_preparation_2nifti" and "readerwrapper.m" under /QSM_Utilily/fileIO/
 
 Output file format
 a. internal/final results are saved in MATLAB native format (.mat)
