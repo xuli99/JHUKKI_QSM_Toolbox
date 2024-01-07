@@ -116,6 +116,12 @@ for dcm_ii = 1:length(dcm)
 
     [Params.b0dir, Params.TAng] = get_B0_dir_from_nifti(nii_phase);
 
+    % par/rec file test
+    if isfile(dcm_name) && contains(dcm_name(end-3:end), ["par","rec"], 'IgnoreCase', true)
+       negyz = diag([1, -1, -1]);   %
+       Params.b0dir = negyz*Params.b0dir; Params.TAng = Params.TAng*negyz;
+    end
+
     % save header .mat file
     output_header_filename     = strcat(filename_prefix, 'header.mat');
     save(fullfile(output_dir_internal, output_header_filename), "Params", '-v7.3');
