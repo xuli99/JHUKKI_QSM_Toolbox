@@ -201,6 +201,14 @@ else
                     GREPhase(:,:,:,:,dynamic_ind) = phase_unwrap_template(GREPhase(:,:,:,:,dynamic_ind), Params.TEs, Params.TemplateEcho);
                 end
 
+                if isfield(Params, 'UnwrapCheck')
+                    % unwrap echo with potential residual wraps, opt
+                    disp('rerun unwrapping for double checking ...')
+                    for echo_ind = 1:nEchoes
+                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                        GREPhase(:,:,:,echo_ind,dynamic_ind) = GREPhase(:,:,:,echo_ind,dynamic_ind) -  GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind,dynamic_ind);
+                    end
+                end
             end
 
         case 'ROMEO'
