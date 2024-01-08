@@ -43,9 +43,9 @@ Params.voxSize(2)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.PixelSpacing
 Params.voxSize(3)   = cast(pfgs.Item_1.PixelMeasuresSequence.Item_1.SliceThickness, 'double');        % mm
 
 Params.fov      = (round(Params.voxSize.*double(Params.sizeVol)));
-Params.nEchoes     = dicomheader.MRSeriesNrOfEchoes;
-Params.TR          = dicomheader.MRSeriesRepetitionTime(1);
-Params.nDynamics   = dicomheader.MRSeriesNrOfDynamicScans;
+Params.nEchoes     = cast(dicomheader.MRSeriesNrOfEchoes, 'double');
+Params.TR          = cast(dicomheader.MRSeriesRepetitionTime(1), 'double');
+Params.nDynamics   = cast(dicomheader.MRSeriesNrOfDynamicScans, 'double');
 
 if ~isfield(dicomheader, 'coilNum')
     Params.coilNum     = 1;     % default

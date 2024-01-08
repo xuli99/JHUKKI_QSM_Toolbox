@@ -116,10 +116,11 @@ for dcm_ii = 1:length(dcm)
 
     [Params.b0dir, Params.TAng] = get_B0_dir_from_nifti(nii_phase);
 
-    % par/rec file test
+    % par/rec to NIFTI test, convert to LAS, b0 needs correction
     if isfile(dcm_name) && contains(dcm_name(end-3:end), ["par","rec"], 'IgnoreCase', true)
-       negyz = diag([1, -1, -1]);   %
-       Params.b0dir = negyz*Params.b0dir; Params.TAng = Params.TAng*negyz;
+       disp('usning NIFTI file converted from par/rec, check with caution...')
+       negz = diag([1, 1, -1]);   %
+       Params.b0dir = negz*Params.b0dir; Params.TAng = Params.TAng*negz;
     end
 
     % save header .mat file
