@@ -19,13 +19,13 @@ handles.Params.B0                   = 3;              % Tesla
 
 % Method selection
 handles.VarUnwrappingMethod.Value   = 1;           % default, select according to Dict
-handles.VarBgRemoval.Value          = 3;           % default, select according to Dict
+handles.VarBgRemoval.Value          = 1;           % default, select according to Dict
 handles.VarQSMSolver.Value          = 5;           % default, select according to Dict
 
 % Phase pre-processing
 handles.Params.UnwrappingMethod     = handles.VarUnwrappingMethod.Value;
 handles.Params.phase2DprocFlag      = 0;           % default, edit, 0-1 
-handles.Params.TemplateEcho         = 1;           % default, edit, 0-1, using template unwrapping
+handles.Params.TemplateEcho         = 2;           % default, edit, 0-1, using template unwrapping
 
 % Echo selection
 handles.Params.echoStart            = 3;           % Edit for selecting starting echo

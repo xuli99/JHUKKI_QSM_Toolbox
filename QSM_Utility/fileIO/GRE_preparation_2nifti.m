@@ -61,27 +61,46 @@ for dcm_ii = 1:length(dcm)
     cmd = [dcm2niix_path, 'dcm2niix -z y -v n -w 1 -f %p_%s -p y -o ', output_dir_internal, ' ', dcm_name];
     system(cmd);
 
-    % combine nifti file from each echo    
-    json_list = dir(fullfile(output_dir_internal, '*_e1.json'));    % magnitude echo 1
-    filename_prefix = extractBefore(json_list(1).name, 'e1.json');
+    % combine nifti file from each echo
+    json_test = dir(fullfile(output_dir_internal, '*_ph.json'));
 
-    json_list_ph = dir(fullfile(output_dir_internal, '*_e*_ph.json')); 
-    num_echo = length(json_list_ph);
+    if length(json_test) > 1
+        % if with multi-echoes
+        json_list = dir(fullfile(output_dir_internal, '*_e1.json'));     % magnitude echo 1
+        filename_prefix = extractBefore(json_list(1).name, '_e1.json');  % prefix without "_" now
+    
+        json_list_ph = dir(fullfile(output_dir_internal, '*_e*_ph.json')); 
+        num_echo = length(json_list_ph);
+    
+    elseif length(json_test) == 1
+        % if with single-echo
+        num_echo = 1;
+        json_list_ph = json_test;
+        filename_prefix = extractBefore(json_list_ph(1).name, '_ph.json');  % prefix without "_"
+    else
+        error('There is no phase data.')
+    end
 
     % magnitude & phase
     img_mag     = [];
     img_phase   = [];
 
     for kecho = 1:num_echo
-        curr_echo_mag_filename      = strcat(filename_prefix, 'e', num2str(kecho),'.nii.gz');
-        curr_echo_phase_filename    = strcat(filename_prefix, 'e', num2str(kecho),'_ph.nii.gz');
-        
+        if num_echo > 1
+            curr_echo_mag_filename      = strcat(filename_prefix, '_e', num2str(kecho),'.nii.gz');
+            curr_echo_phase_filename    = strcat(filename_prefix, '_e', num2str(kecho),'_ph.nii.gz');
+        else
+            curr_echo_mag_filename      = strcat(filename_prefix, '.nii.gz'); % prefix without "_"
+            curr_echo_phase_filename    = strcat(filename_prefix, '_ph.nii.gz');
+        end
+
         img_mag     = cat(4,img_mag, load_nii_img_only(fullfile(output_dir_internal,curr_echo_mag_filename)));
         img_phase   = cat(4,img_phase, load_nii_img_only(fullfile(output_dir_internal,curr_echo_phase_filename)));
+        
     end
 
-    output_mag_filename     = strcat(filename_prefix, 'GRE_mag.nii.gz');
-    output_phase_filename   = strcat(filename_prefix, 'GRE_phase.nii.gz');
+    output_mag_filename     = strcat(filename_prefix, '_GRE_mag.nii.gz');
+    output_phase_filename   = strcat(filename_prefix, '_GRE_phase.nii.gz');
 
     save_nii_img_only(fullfile(output_dir_internal,curr_echo_mag_filename),fullfile(output_dir_internal,output_mag_filename),img_mag);
     save_nii_img_only(fullfile(output_dir_internal,curr_echo_phase_filename),fullfile(output_dir_internal,output_phase_filename),img_phase);
@@ -124,15 +143,21 @@ for dcm_ii = 1:length(dcm)
     end
 
     % save header .mat file
-    output_header_filename     = strcat(filename_prefix, 'header.mat');
+    output_header_filename     = strcat(filename_prefix, '_header.mat');
     save(fullfile(output_dir_internal, output_header_filename), "Params", '-v7.3');
 
     disp('GRE header .mat file saved.')
 
     % clean up if selected
     if cleanup
-        delete(fullfile(output_dir_internal, [filename_prefix, 'e*.json']));
-        delete(fullfile(output_dir_internal, [filename_prefix, 'e*.nii.gz']));
+        % if multi-echo
+        delete(fullfile(output_dir_internal, [filename_prefix, '_e*.json']));
+        delete(fullfile(output_dir_internal, [filename_prefix, '_e*.nii.gz']));
+        % if single-echo
+        delete(fullfile(output_dir_internal, [filename_prefix, '.json']));
+        delete(fullfile(output_dir_internal, [filename_prefix, '.nii.gz']));
+        delete(fullfile(output_dir_internal, [filename_prefix, '_ph.json']));
+        delete(fullfile(output_dir_internal, [filename_prefix, '_ph.nii.gz']));
     end
 
 end

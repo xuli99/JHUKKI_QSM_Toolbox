@@ -11,7 +11,8 @@ nEchoes = length(TEs);
 UnwrapFlag = zeros(nEchoes, 1);  % 1: unwrapped
 
 if TemplateEcho < 1 || TemplateEcho > nEchoes
-    error('Invalid selection of template echo.')
+    disp('Invalid selection of template echo... skip template unwrapping...')
+    return;
 end
 
 PhaseIn(:,:,:,TemplateEcho) = phase_unwrap_path_mex(PhaseIn(:,:,:,TemplateEcho));

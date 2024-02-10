@@ -70,7 +70,7 @@ else
     handles.Params.AvgBeforeBR      = 1;    % default Avg before Background Removal
     handles.Params.EchoAvg          = 1;    % defualt using EchoAvg
     handles.Params.ErodeRadius      = 1;    % mm, mask erosion
-    handles.Params.SHARPradius      = 8;    % mm, SHARP kernal radius
+    handles.Params.SHARPradius      = 6;    % mm, SHARP kernal radius
     handles.Params.MaskThreshold    = 65;   % backup masking code
 end
 
