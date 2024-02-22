@@ -19,19 +19,19 @@ function [x, cost_reg_history, cost_data_history] =  delta2chi_MEDI(deltaB, Para
 % 2021-09-15, X.L. bug fix
 
 %%%%%%%%%%%%%%% weights definition %%%%%%%%%%%%%%
-if nargin < 8
-    smv_rad = 0;
-elseif nargin < 7
+if nargin < 5
+    lambda = 1000;
+    merit = 0;
     edgePer = 0.9;
     smv_rad = 0;
 elseif nargin < 6
     merit = 0;
     edgePer = 0.9; 
     smv_rad = 0;
-elseif nargin < 5
-    lambda = 1000;
-    merit = 0;
+elseif nargin < 7
     edgePer = 0.9;
+    smv_rad = 0;
+elseif nargin < 8
     smv_rad = 0;
 end
 
