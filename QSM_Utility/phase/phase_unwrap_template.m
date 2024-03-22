@@ -15,7 +15,7 @@ if TemplateEcho < 1 || TemplateEcho > nEchoes
     return;
 end
 
-PhaseIn(:,:,:,TemplateEcho) = phase_unwrap_path_mex(PhaseIn(:,:,:,TemplateEcho));
+[PhaseIn(:,:,:,TemplateEcho), ~] = phase_unwrap_path_mex(PhaseIn(:,:,:,TemplateEcho));
 UnwrapFlag(TemplateEcho) = 1;
 
 for echo_ind = [TemplateEcho:-1:1, TemplateEcho:nEchoes]

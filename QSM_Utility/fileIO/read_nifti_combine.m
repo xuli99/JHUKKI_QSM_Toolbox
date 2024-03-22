@@ -10,8 +10,10 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag)
 % Affiliation: Radiology @ JHU
 % Email address: xuli@mri.jhu.edu
 
+% 2024-03-21, X.L., for SIEMENS data with diff series number for mag vs. phase
+
 if nargin < 2
-    cleanup = 0;
+    cleanup = 0;        % default no cleanup
     parrecflag = 0;
 elseif nargin < 3
     parrecflag = 0;
@@ -34,17 +36,26 @@ for nifti_ii = 1:length(nifti_dirs)
 
     if length(json_test) > 1
         % if with multi-echoes
-        json_list = dir(fullfile(nifti_dir, '*_e1.json'));     % magnitude echo 1
-        filename_prefix = extractBefore(json_list(1).name, '_e1.json');  % prefix without "_" now
+        json_list = dir(fullfile(nifti_dir, '*_e1.json'));            % magnitude echo 1
+        filename_prefix_mag = extractBefore(json_list(1).name, '_e1.json');     % prefix without "_" now
     
         json_list_ph = dir(fullfile(nifti_dir, '*_e*_ph.json')); 
         num_echo = length(json_list_ph);
-    
+        filename_prefix_phase = extractBefore(json_list_ph(1).name, '_e1_ph.json');     % prefix without "_" now
+
     elseif length(json_test) == 1
         % if with single-echo
         num_echo = 1;
         json_list_ph = json_test;
-        filename_prefix = extractBefore(json_list_ph(1).name, '_ph.json');  % prefix without "_"
+        filename_prefix_phase = extractBefore(json_list_ph(1).name, '_ph.json');  % prefix without "_"
+
+        json_list = dir(fullfile(nifti_dir, '*.json'));
+        for json_ii = 1:lenght(json_list)
+            if ~contains(json_list(json_ii).name, json_list_ph(1).name)
+                filename_prefix_mag = extractBefore(json_list(json_ii).name, '.json');
+            end
+        end
+
     else
         error('There is no phase data.')
     end
@@ -55,17 +66,27 @@ for nifti_ii = 1:length(nifti_dirs)
 
     for kecho = 1:num_echo
         if num_echo > 1
-            curr_echo_mag_filename      = strcat(filename_prefix, '_e', num2str(kecho),'.nii.gz');
-            curr_echo_phase_filename    = strcat(filename_prefix, '_e', num2str(kecho),'_ph.nii.gz');
+            curr_echo_mag_filename      = strcat(filename_prefix_mag, '_e', num2str(kecho),'.nii.gz');
+            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_e', num2str(kecho),'_ph.nii.gz');
         else
-            curr_echo_mag_filename      = strcat(filename_prefix, '.nii.gz'); % prefix without "_"
-            curr_echo_phase_filename    = strcat(filename_prefix, '_ph.nii.gz');
+            curr_echo_mag_filename      = strcat(filename_prefix_mag, '.nii.gz'); % prefix without "_"
+            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_ph.nii.gz');
         end
 
         img_mag     = cat(4,img_mag, load_nii_img_only(fullfile(nifti_dir,curr_echo_mag_filename)));
         img_phase   = cat(4,img_phase, load_nii_img_only(fullfile(nifti_dir,curr_echo_phase_filename)));
         
     end
+
+    % check phase scaling 
+    phase_range = max(img_phase(:)) - min(img_phase(:));
+    if phase_range > 2*pi + 100*eps
+        disp('correct phase scaling ...')
+        img_phase = img_phase./phase_range*(2*pi);
+    end
+
+    % find common prefix & save
+    filename_prefix = intersect(filename_prefix_mag, filename_prefix_phase, 'stable');
 
     output_mag_filename     = strcat(filename_prefix, '_GRE_mag.nii.gz');
     output_phase_filename   = strcat(filename_prefix, '_GRE_phase.nii.gz');
@@ -85,7 +106,7 @@ for nifti_ii = 1:length(nifti_dirs)
     Params.nifti_hdr.dime.dim(1) = 3;
 
     % read TE from json file
-    json_list = dir(fullfile(nifti_dir, [filename_prefix, '*_ph.json']));
+    json_list = dir(fullfile(nifti_dir, [filename_prefix_phase, '*_ph.json']));
     json_filenames = cell(length(json_list), 1);
     for json_ii = 1:length(json_list)
         json_filenames{json_ii} = fullfile(json_list(json_ii).folder, json_list(json_ii).name);
@@ -118,14 +139,20 @@ for nifti_ii = 1:length(nifti_dirs)
 
     % clean up if selected
     if cleanup
-        % if multi-echo
-        delete(fullfile(nifti_dir, [filename_prefix, '_e*.json']));
-        delete(fullfile(nifti_dir, [filename_prefix, '_e*.nii.gz']));
-        % if single-echo
-        delete(fullfile(nifti_dir, [filename_prefix, '.json']));
-        delete(fullfile(nifti_dir, [filename_prefix, '.nii.gz']));
-        delete(fullfile(nifti_dir, [filename_prefix, '_ph.json']));
-        delete(fullfile(nifti_dir, [filename_prefix, '_ph.nii.gz']));
+        if num_echo > 1
+            % if multi-echo
+            delete(fullfile(nifti_dir, [filename_prefix_mag, '_e*.json']));
+            delete(fullfile(nifti_dir, [filename_prefix_mag, '_e*.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_e*.json']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_e*.nii.gz']));
+        else
+            % if single-echo
+            delete(fullfile(nifti_dir, [filename_prefix_mag, '.json']));
+            delete(fullfile(nifti_dir, [filename_prefix_mag, '.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_ph.json']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_ph.nii.gz']));
+        end
+
     end
 
 end

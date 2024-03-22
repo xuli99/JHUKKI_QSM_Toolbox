@@ -141,7 +141,7 @@ else
                     if ~isfield(handles.Params, 'cluster')  % GUI only
                         multiWaitbar( textWaitbar, 0.6*(dynamic_ind/Params.nDynamics)); 
                     end
-                    GREPhase(:,:,:,1,dynamic_ind) = phase_unwrap_path_mex(double(GREPhase(:,:,:,1,dynamic_ind)));    % path based mex version, still in radian
+                    [GREPhase(:,:,:,1,dynamic_ind),~] = phase_unwrap_path_mex(double(GREPhase(:,:,:,1,dynamic_ind)));    % path based mex version, still in radian
                     if ~isfield(handles.Params, 'cluster')  % GUI only
                         hasCanceled = multiWaitbar(textWaitbar, dynamic_ind/Params.nDynamics);  
                     else
@@ -157,7 +157,7 @@ else
                 for dynamic_ind = 1:Params.nDynamics 
                     GREPhase(:,:,:,:,dynamic_ind) = double(GREPhase(:,:,:,:,dynamic_ind));
                     for echo_ind = 1:length(Params.echoNums)
-                        GREPhase(:,:,:,Params.echoNums(echo_ind),dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,Params.echoNums(echo_ind),dynamic_ind));
+                        [GREPhase(:,:,:,Params.echoNums(echo_ind),dynamic_ind), ~] = phase_unwrap_path_mex(GREPhase(:,:,:,Params.echoNums(echo_ind),dynamic_ind));
                         if ~isfield(handles.Params, 'cluster')  % GUI only
                             hasCanceled = multiWaitbar( textWaitbar, (echo_ind/length(Params.echoNums))*(dynamic_ind/Params.nDynamics) );
                         else
@@ -182,10 +182,14 @@ else
             end
 
             nEchoes = Params.nEchoes;
+            
+            % PhaseQuality = zeros(N,"double"); 
+            % PhaseQuality(:,:,:,echo_ind,dynamic_ind)
+
             for dynamic_ind = 1:Params.nDynamics
                 % unwrap each echo
                 for echo_ind = 1:nEchoes
-                    GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                    [GREPhase(:,:,:,echo_ind,dynamic_ind), ~] = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
                     % display progress
                     if ~isfield(handles.Params, 'cluster')  % GUI only
                         hasCanceled = multiWaitbar( textWaitbar, (echo_ind/nEchoes)*(dynamic_ind/Params.nDynamics));
@@ -205,7 +209,7 @@ else
                     % unwrap echo with potential residual wraps, opt
                     disp('rerun unwrapping for double checking ...')
                     for echo_ind = 1:nEchoes
-                        GREPhase(:,:,:,echo_ind,dynamic_ind) = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                        [GREPhase(:,:,:,echo_ind,dynamic_ind), ~] = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
                         GREPhase(:,:,:,echo_ind,dynamic_ind) = GREPhase(:,:,:,echo_ind,dynamic_ind) -  GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind,dynamic_ind);
                     end
                 end
