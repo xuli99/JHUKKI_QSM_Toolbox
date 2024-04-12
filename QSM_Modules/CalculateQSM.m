@@ -361,7 +361,11 @@ else
             end
             
         case 'MEDI'     
-            lambda = 2500;       
+            if isfield(Params, 'QSM_MEDIlambda')
+                lambda = Params.QSM_MEDIlambda;
+            else
+                lambda = 2500;  % default
+            end
             edgePer = 3*0.3;    % Edge voxel percentage
             merit = 1;          % fine tuning
             
