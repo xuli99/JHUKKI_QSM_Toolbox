@@ -11,6 +11,7 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag)
 % Email address: xuli@mri.jhu.edu
 
 % 2024-03-21, X.L., for SIEMENS data with diff series number for mag vs. phase
+% 2024-04-23, X.L., bug fix for naming convention prefix
 
 if nargin < 2
     cleanup = 0;        % default no cleanup
@@ -85,8 +86,17 @@ for nifti_ii = 1:length(nifti_dirs)
         img_phase = img_phase./phase_range*(2*pi);
     end
 
-    % find common prefix & save
-    filename_prefix = intersect(filename_prefix_mag, filename_prefix_phase, 'stable');
+    % find longest common prefix & save
+    for prefix_i = 1:length(filename_prefix_mag)
+        prefix_pat = filename_prefix_mag(1:prefix_i);
+            if contains(filename_prefix_phase, prefix_pat)
+                filename_prefix = prefix_pat;
+            else
+                continue;
+            end
+    end
+    % intersect will remove repetitions
+    % filename_prefix = intersect(filename_prefix_mag, filename_prefix_phase, 'stable'); 
 
     output_mag_filename     = strcat(filename_prefix, '_GRE_mag.nii.gz');
     output_phase_filename   = strcat(filename_prefix, '_GRE_phase.nii.gz');
