@@ -12,6 +12,7 @@
 % Updated 2021-09-12, X.L., bug fix for padding in SFCR
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
 % Updated 2022-06-24, X.L. added Params check for kernel calculation
+% Updated 2024-05-28, X.L., fixed weighting bug for MEDI
 
 %% Get variables
 Params      = handles.Params;
@@ -219,14 +220,25 @@ switch Params.QSMSolverDict{Params.QSMSolver}
         DPWeight = zeros([Params.sizeVol, 1, Params.nDynamics]);
         if isfield(handles, 'DPWeight')
             DPWeight = handles.DPWeight.*maskErode;            % loaded weight may not be normalized
-            DPWeight = DPWeight./max(DPWeight(maskErode>0));   % normalization, v2
+            switch Params.QSMSolverDict{Params.QSMSolver} 
+                case {'MEDI', 'SFCR', 'NDI', 'TFI'}         
+                    DPWeight = DPWeight./mean(DPWeight(maskErode>0));   % mean normalization, v3.0
+                case {'FANSI','nSFCR'}
+                    DPWeight = DPWeight./max(DPWeight(maskErode>0));    % max normalization
+            end
         else
             for dynamic_ind = 1:Params.nDynamics
                 DPWeight(:,:,:,1,dynamic_ind) = ...
                     sqrt(sum(single(GREMag(:,:,:,Params.echoNums,dynamic_ind).*reshape(Params.TEs(Params.echoNums), [1,1,1,length(Params.echoNums)])).^2, 4));
-                temp = DPWeight(:,:,:,1,dynamic_ind);
-                DPWeight(:,:,:,1,dynamic_ind) = DPWeight(:,:,:,1,dynamic_ind)./max(temp(maskErode>0));  % normalization, v2
                 DPWeight(:,:,:,1,dynamic_ind) = DPWeight(:,:,:,1,dynamic_ind).*maskErode; 
+                temp = DPWeight(:,:,:,1,dynamic_ind);
+
+                switch Params.QSMSolverDict{Params.QSMSolver} 
+                    case {'MEDI', 'SFCR', 'NDI', 'TFI'}  
+                        DPWeight(:,:,:,1,dynamic_ind) = DPWeight(:,:,:,1,dynamic_ind)./mean(temp(maskErode>0));  % mean normalization, v3.0
+                    case {'FANSI','nSFCR'}    
+                        DPWeight(:,:,:,1,dynamic_ind) = DPWeight(:,:,:,1,dynamic_ind)./max(temp(maskErode>0));   % max normalization
+                end
             end
         end
         clear GREMag  

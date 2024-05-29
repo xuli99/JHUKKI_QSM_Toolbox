@@ -17,6 +17,7 @@ function [x, cost_reg_history, cost_data_history] =  delta2chi_MEDI(deltaB, Para
 % Added in SMV filtered option as in MSDI
 % Acosta-Cabronero J et. al, Neuroimage 2018
 % 2021-09-15, X.L. bug fix
+% 2024, X.L. parameter fix
 
 %%%%%%%%%%%%%%% weights definition %%%%%%%%%%%%%%
 if nargin < 5
@@ -37,7 +38,7 @@ end
 
 % internal parameters for L1 solver
 cg_max_iter = 100;              % for cg loop, or 100
-cg_tol = 0.1;                  % cg tolerance, or 0.01
+cg_tol = 0.01;                  % cg tolerance, or 0.01
 
 max_iter = 10;                  % outer loop
 tol_norm_ratio = 0.1;

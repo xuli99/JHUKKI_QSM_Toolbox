@@ -52,12 +52,13 @@ for dcm_ii = 1:length(dcm)
 
     if isempty(output_dir)
         nii_output = fullfile(dcm_pdir, 'nifti'); % default inter output
-        if ~exist(nii_output, "dir")
-            mkdir(nii_output)
-        end
         output_dir_internal = nii_output;
     else
         output_dir_internal = output_dir;
+    end
+
+    if ~exist(output_dir_internal, "dir")
+        mkdir(output_dir_internal)
     end
 
     % for debuging add -v y
