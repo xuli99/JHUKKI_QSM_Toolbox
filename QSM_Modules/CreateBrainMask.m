@@ -11,6 +11,7 @@
 % Updated 2022-05-03, X.L., added switch for compatibility with some old mask options
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
 % Updated 2023-06-12, X.L., added wsl support for pc
+% Updated 2024-06-01, X.L., added phase_quality_map option for path-based method
 
 %% Get variables
 Params      = handles.Params;
@@ -230,6 +231,10 @@ else
 
                     if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'ROMEO')
                         mask_unrelyPhase = mask_unrelyPhase | (handles.phase_quality_map < Params.romeo_phasequality_thresh); 
+                    end
+
+                    if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'Path') && isfield(Params, 'phasequality_thresh')
+                        mask_unrelyPhase = mask_unrelyPhase | (handles.phase_quality_map < Params.phasequality_thresh); 
                     end
 
                     if isfield(Params, 'maskHs')

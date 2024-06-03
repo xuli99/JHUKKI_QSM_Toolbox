@@ -6,6 +6,8 @@ function [status] = QSM_cluster(varargin)
 %   LogFile = 'logd.txt';
 %   QSM_cluster(ParamsSetFile, LogFile)
 
+% 2024-05-31, update with TableDataFile argument
+
 if nargin < 1
     ParamsFile = 'ParamsSetting_cluster.m';
     logfile = fullfile(fileparts(mfilename('fullpath')), 'logd.txt');
@@ -14,10 +16,17 @@ elseif nargin < 2
     ParamsFile = varargin{1};
     logfile = fullfile(fileparts(mfilename('fullpath')), 'logd.txt');
     logtxt = ['Run parameters setting script:', strrep(ParamsFile, '\', '\\'), ' and log to logd.txt'];
-else
+elseif nargin < 3
     ParamsFile = varargin{1};
     logfile = varargin{2};
     logtxt = ['Run parameters setting script:', strrep(ParamsFile, '\', '\\'), ' and log to ', strrep(logfile, '\', '\\')];
+elseif nargin < 4
+    ParamsFile = varargin{1};
+    logfile = varargin{2};
+    logtxt = ['Run parameters setting script:', strrep(ParamsFile, '\', '\\'), ' and log to ', strrep(logfile, '\', '\\')];
+
+    TableDataFile = varargin{3};    % set dataTable separately from ParamsFile
+    handles.DataListFile = TableDataFile;
 end
 disp(logtxt);
 

@@ -9,6 +9,7 @@
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
 % Updated 2023-06-01 X.L., saving format update
 % Updated 2023-10-09 X.L., adding template unwrapping for path-based method 
+% Updated 2024-06-01 X.L., added phase_quality_map for path-based method 
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -183,13 +184,20 @@ else
 
             nEchoes = Params.nEchoes;
             
-            % PhaseQuality = zeros(N,"double"); 
-            % PhaseQuality(:,:,:,echo_ind,dynamic_ind)
+            % added phase_quality_map from path-based unwrapping (reciprocal of sum of 2nd diff)
+            phase_quality_map = zeros([Params.sizeVol, Params.nDynamics]);
 
             for dynamic_ind = 1:Params.nDynamics
                 % unwrap each echo
                 for echo_ind = 1:nEchoes
-                    [GREPhase(:,:,:,echo_ind,dynamic_ind), ~] = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                    [GREPhase(:,:,:,echo_ind,dynamic_ind), phase_quality_echo] = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
+                    
+                    if echo_ind == 1
+                        phase_quality_map(:,:,:,dynamic_ind) = phase_quality_echo; 
+                    else
+                        phase_quality_map(:,:,:,dynamic_ind) = min(phase_quality_map(:,:,:,dynamic_ind), phase_quality_echo);
+                    end
+
                     % display progress
                     if ~isfield(handles.Params, 'cluster')  % GUI only
                         hasCanceled = multiWaitbar( textWaitbar, (echo_ind/nEchoes)*(dynamic_ind/Params.nDynamics));
@@ -255,8 +263,10 @@ else
     
     % save data
     switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
-        case {'Laplacian', 'Path'}
+        case {'Laplacian'}
             save([outputFile '.mat'], 'GREPhase', 'Params', '-v7.3');
+        case {'Path'}
+            save([outputFile '.mat'], 'GREPhase', 'Params', 'phase_quality_map', '-v7.3');
         case {'NonlinearFit + Path'}
             save([outputFile '.mat'], 'GREPhase', 'Params', 'DPWeight', '-v7.3');
         case {'ROMEO'}
@@ -276,8 +286,10 @@ end
 % Save
 handles.GREPhase        = GREPhase;
 switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
-    case {'Laplacian', 'Path'}
+    case {'Laplacian'}
         % do nothing
+    case {'Path'}
+        handles.phase_quality_map = phase_quality_map;
     case {'NonlinearFit + Path'}
         handles.DPWeight        = DPWeight;
     case {'ROMEO'}
