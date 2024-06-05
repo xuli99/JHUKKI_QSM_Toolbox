@@ -724,6 +724,12 @@ else
     end
     saveNII(squeeze(chi_res), outputFile, Params, 1);
     
+    % option to save the final QSM mask
+    if isfield(Params, 'SaveQSMmask')
+        if Params.SaveQSMmask == 1
+            saveNII(maskErode.*1, [outputFile, '_QSMmask'], Params, 1);
+        end
+    end
 end
 
 % Save
