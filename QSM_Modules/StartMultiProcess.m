@@ -5,11 +5,19 @@
 % Updated 2019-07-09 X.L.
 % Updated 2021-06-16 X.L., improved memory efficiency
 % Updated 2021-06-24 X.L., cluster version
+% Updated 2024-06-07 X.L., for cluster array
 
 %% Start processing of multiple datasets
 % Save Constants file
 Params          = handles.Params;
-save(handles.Params.QSMSettingsFile, 'Params');
+if ~isfield(Params,'NoSaveQSMsetting')
+    % default
+    save(handles.Params.QSMSettingsFile, 'Params');
+else
+    if Params.NoSaveQSMsetting == 0
+        save(handles.Params.QSMSettingsFile, 'Params');
+    end
+end
 
 % Get table data
 if isfield(handles.Params, 'cluster')
