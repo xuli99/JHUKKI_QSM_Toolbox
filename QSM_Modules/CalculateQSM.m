@@ -13,6 +13,7 @@
 % Updated 2022-03-22, X.L. added option to use RAS NIFTI
 % Updated 2022-06-24, X.L. added Params check for kernel calculation
 % Updated 2024-05-28, X.L., fixed weighting bug for MEDI
+% Updated 2024-06-06, X.L., fixed QSMSettingsFile problem for cluster array 
 
 %% Get variables
 Params      = handles.Params;
@@ -747,7 +748,14 @@ end
 
 % Save Constants file
 Params                 = handles.Params;
-save(handles.Params.QSMSettingsFile, 'Params');
+if ~isfield(Params,'NoSaveQSMsetting')
+    % default
+    save(handles.Params.QSMSettingsFile, 'Params');
+else
+    if Params.NoSaveQSMsetting == 0
+        save(handles.Params.QSMSettingsFile, 'Params');
+    end
+end
 
 % Update table
 UpdateTable(handles, 'Completed 4 of 4 - Finished!');
