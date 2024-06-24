@@ -10,6 +10,7 @@
 % Updated 2023-06-01 X.L., saving format update
 % Updated 2023-10-09 X.L., adding template unwrapping for path-based method 
 % Updated 2024-06-01 X.L., added phase_quality_map for path-based method 
+% Updated 2024-06-24 X.L., added RefVox check for path-based method to increase robustness
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -188,6 +189,7 @@ else
             phase_quality_map = zeros([Params.sizeVol, Params.nDynamics]);
 
             for dynamic_ind = 1:Params.nDynamics
+                GREPhase_Ref = zeros(nEchoes,1);    % do it for each dynamic separately
                 % unwrap each echo
                 for echo_ind = 1:nEchoes
                     [GREPhase(:,:,:,echo_ind,dynamic_ind), phase_quality_echo] = phase_unwrap_path_mex(GREPhase(:,:,:,echo_ind,dynamic_ind));
@@ -204,7 +206,25 @@ else
                     else
                         disp([num2str(100*((echo_ind/nEchoes)*(dynamic_ind/Params.nDynamics))), '% Done.']);
                     end
-                    GREPhase(:,:,:,echo_ind,dynamic_ind) = GREPhase(:,:,:,echo_ind,dynamic_ind) -  GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind,dynamic_ind);
+
+                    GREPhase_Ref(echo_ind) = GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind, dynamic_ind);
+                end
+                
+                % Adjust RefVox in cases of large jump (e.g. in veins) to avoid potential Error
+                while abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi && all(RefVox(1:2) < floor(N(1:2)*0.6))
+                    shiftstep = 3;  % in-slice shift
+                    RefVox(1) = RefVox(1) + shiftstep;
+                    RefVox(2) = RefVox(2) + shiftstep;
+                    GREPhase_Ref = squeeze(GREPhase(RefVox(1), RefVox(2), RefVox(3), :, dynamic_ind));
+                end
+
+                if abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi
+                    % adjustment not successfuly
+                    disp('RefVox may be problemetic.')
+                end
+
+                for echo_ind = 1:nEchoes
+                    GREPhase(:,:,:,echo_ind,dynamic_ind) = GREPhase(:,:,:,echo_ind,dynamic_ind) -  GREPhase_Ref(echo_ind);
                 end
 
                 % using template unwrapping to increase robustness
