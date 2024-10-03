@@ -178,7 +178,21 @@ if Params.AutoRefFlag == 1
     GREMagSegFile = [Params.FileBaseName, '_brain_mixeltype.nii.gz'];             % old version
     GREMagSegFile2 = [Params.FileBaseName, '_GREMag1_brain_mixeltype.nii.gz'];    % new version
     GREMagSegFile3 = [Params.FileBaseName, '_Seg_brain_mixeltype.nii.gz'];        % other option
-    
+
+    CSFmaskFileFlag = 0;
+    CSFmaskFile = [];
+    if isfield(Params, 'FileCSFmask_App')
+        CSFmaskFile = [Params.FileBaseName, Params.FileCSFmask_App];              % load CSFmask directly, if without R2*
+    elseif isfield(Params, 'FileCSFmask')
+        CSFmaskFile = Params.FileCSFmask;
+    end
+
+    if ~isempty(CSFmaskFile)
+        if (exist(fullfile(cd, CSFmaskFile), 'file') == 2)
+            CSFmaskFileFlag = 1;
+        end
+    end
+
     GREMagSegFileFlag = 1;
     if (exist(fullfile(cd, GREMagSegFile), 'file') == 2) 
         GREMagSegFileTarget = GREMagSegFile;            % .nii.gz
@@ -205,6 +219,15 @@ if Params.AutoRefFlag == 1
         % for RAS NIFTI
         nii = nii_img_update(nii, Params);        
         GREMagSeg = permute(nii.img, [2,1,3]);   
+    end
+
+    if CSFmaskFileFlag == 1
+        disp('CSFmask file exists. Load directly.')
+        nii = load_untouch_nii(CSFmaskFile);
+        % for RAS NIFTI
+        nii = nii_img_update(nii, Params);        
+        CSFmask1 = cast(permute(nii.img, [2,1,3]), 'double');
+        CSFmask1 = CSFmask1 > 0;
     end
 end
 
@@ -410,24 +433,35 @@ else
             lambdaSet.lambda1_S = 1000;     
             lambdaSet.lambda2_S = 0;
             
-            if (Params.AutoRefFlag == 1) && (exist('R2starMap', 'var') == 1)                
-                lambdaSet.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
-                [CSFmask1] = CSFmaskThresh(R2starMap, lambdaSet.R2sThresh, maskErode, Params.voxSize);                
-                
-                if (exist('GREMagSeg', 'var') == 1)
-                    CSFmask2 = (GREMagSeg == 0) & maskErode;
-                    disp('updating CSF mask based on R2* with FSL Segmentation')
-                    % --- Good choice if with small ventricles (e.g. in RLS study),
-                    % use with caution for other cases
-                    CSFmask1 = R2starMap < lambdaSet.R2sThresh;
+            if (Params.AutoRefFlag == 1)
+                if (exist('R2starMap', 'var') == 1)
+                    % Use R2* to get CSF masking
+                    lambdaSet.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
+                    [CSFmask1] = CSFmaskThresh(R2starMap, lambdaSet.R2sThresh, maskErode, Params.voxSize);                
+                    
+                    if (exist('GREMagSeg', 'var') == 1)
+                        CSFmask2 = (GREMagSeg == 0) & maskErode;
+                        disp('updating CSF mask based on R2* with FSL Segmentation')
+                        % --- Good choice if with small ventricles (e.g. in RLS study),
+                        % use with caution for other cases
+                        CSFmask1 = R2starMap < lambdaSet.R2sThresh;
+    
+                    else
+                        CSFmask2 = maskErode;
+                    end
+                    lambdaSet.maskSS = CSFmask1 & CSFmask2;
+                    lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
+                    lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
+
+                elseif CSFmaskFileFlag == 1
+                    lambdaSet.maskSS = CSFmask1;
+                    lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
+                    lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
 
                 else
-                    CSFmask2 = maskErode;
+                    disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
                 end
-                
-                lambdaSet.maskSS = CSFmask1 & CSFmask2;
-                lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
-                lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
+
             end
             
             deltaB = padarray(deltaB, padsize);
