@@ -14,6 +14,7 @@
 % Updated 2022-06-24, X.L. added Params check for kernel calculation
 % Updated 2024-05-28, X.L., fixed weighting bug for MEDI
 % Updated 2024-06-06, X.L., fixed QSMSettingsFile problem for cluster array 
+% Updated 2024-10-03, X.L., added option for load CSF mask 
 
 %% Get variables
 Params      = handles.Params;
