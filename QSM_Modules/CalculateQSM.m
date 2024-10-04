@@ -191,6 +191,8 @@ if Params.AutoRefFlag == 1
     if ~isempty(CSFmaskFile)
         if (exist(fullfile(cd, CSFmaskFile), 'file') == 2)
             CSFmaskFileFlag = 1;
+        else
+            disp([CSFmaskFile, ' not found.'])
         end
     end
 
@@ -461,6 +463,7 @@ else
 
                 else
                     disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
+                    return
                 end
 
             end
