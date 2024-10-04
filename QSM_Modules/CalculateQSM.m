@@ -463,7 +463,12 @@ else
 
                 else
                     disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
-                    return
+                    if isfield(handles.Params, 'cluster')  % if cluster version, skip the current case and continue
+                        disp('For cluster version, skip the current case and continue ...')
+                        handles = UpdateTable(handles, 'Error with AutoRef. Skipped.');
+                        return
+                    end
+
                 end
 
             end
@@ -796,7 +801,7 @@ else
 end
 
 % Update table
-UpdateTable(handles, 'Completed 4 of 4 - Finished!');
+handles = UpdateTable(handles, 'Completed 4 of 4 - Finished!');
 
 if ~isfield(handles.Params, 'cluster')  % GUI only
     % Update buttons

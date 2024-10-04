@@ -336,4 +336,4 @@ if ~isfield(handles.Params, 'cluster')  % GUI only
 end
 
 % Update table
-UpdateTable(handles, 'Completed 3 of 4');
+handles = UpdateTable(handles, 'Completed 3 of 4');
