@@ -465,6 +465,7 @@ else
                     disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
                     if isfield(handles.Params, 'cluster')  % if cluster version, skip the current case and continue
                         disp('For cluster version, skip the current case and continue ...')
+                        writelog(handles.logfile, 'AutoRef Error, no R2* or CSF mask. QSM Skipped. \n');
                         handles = UpdateTable(handles, 'Error with AutoRef. Skipped.');
                         return
                     end
