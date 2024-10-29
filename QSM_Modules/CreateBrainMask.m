@@ -316,6 +316,12 @@ else
                 maskErode = imdilate3dslice(maskErode, strel('disk', 1));
                 maskErode = imfill3(maskErode);   
                 maskErode = imerode3dslice(maskErode, strel('disk', 1));
+
+            elseif Params.maskHs == 3
+                % for truncated FOV
+                for sliceii = 1:size(maskErode, 3)
+                    maskErode(:,:,sliceii) = imfill(maskErode(:,:,sliceii), 'holes');
+                end
             else
                 % skip imfill3
             end
