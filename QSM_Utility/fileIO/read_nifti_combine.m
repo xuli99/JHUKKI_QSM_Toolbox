@@ -51,7 +51,7 @@ for nifti_ii = 1:length(nifti_dirs)
         filename_prefix_phase = extractBefore(json_list_ph(1).name, '_ph.json');  % prefix without "_"
 
         json_list = dir(fullfile(nifti_dir, '*.json'));
-        for json_ii = 1:lenght(json_list)
+        for json_ii = 1:length(json_list)
             if ~contains(json_list(json_ii).name, json_list_ph(1).name)
                 filename_prefix_mag = extractBefore(json_list(json_ii).name, '.json');
             end
