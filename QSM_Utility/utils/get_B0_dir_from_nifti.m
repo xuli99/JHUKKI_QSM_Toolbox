@@ -33,7 +33,7 @@ if isfield(nii, 'hist') % header structure from load_untouch_header_only.m
     hist = nii.hist;
 end
 
-% first element of quaternion
+% first element of quaternion (non-negative)
 a = sqrt(1 - hist.quatern_b^2 - hist.quatern_c^2 - hist.quatern_d^2);
 
 % transform from qiaternion representation to rotation matrix

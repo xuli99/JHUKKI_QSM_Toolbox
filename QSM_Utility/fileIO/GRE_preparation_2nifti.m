@@ -72,6 +72,6 @@ for dcm_ii = 1:length(dcm)
         parrec_flag = 1;
     end
     
-    read_nifti_combine(output_dir_internal, cleanup, parrec_flag);
+    read_nifti_combine(output_dir_internal, cleanup, parrec_flag, dcm_name);
 
 end

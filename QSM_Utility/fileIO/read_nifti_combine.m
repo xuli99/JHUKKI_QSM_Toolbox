@@ -1,10 +1,12 @@
-function read_nifti_combine(nifti_dirs, cleanup, parrecflag)
-% function read_nifti_combine(nifti_dirs, cleanup, parrecflag)
+function read_nifti_combine(nifti_dirs, cleanup, parrecflag, dcm_name)
+% function read_nifti_combine(nifti_dirs, cleanup, parrecflag, dcm_name)
 % 
 % combine multi-echo GRE data (NIFTI from dcm2niix) and read Params from json file and save to header.mat 
 % 
 % nifti_dirs: folders with nifti output from dcm2niix
 % cleanup   : cleanup the original NIFTI and json files from dcm2niix
+% parrecflag: flag for par/rec data
+% dcm_name  : original dcm folder or eDICOM file; for reading eDICOM Params
 % 
 %% Author: Xu Li
 % Affiliation: Radiology @ JHU
@@ -16,8 +18,12 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag)
 if nargin < 2
     cleanup = 0;        % default no cleanup
     parrecflag = 0;
+    dcm_name = [];
 elseif nargin < 3
     parrecflag = 0;
+    dcm_name = [];
+elseif nargin < 4
+    dcm_name = [];
 end
 
 % if multiple folders
@@ -45,7 +51,7 @@ for nifti_ii = 1:length(nifti_dirs)
         filename_prefix_phase = extractBefore(json_list_ph(1).name, '_e1_ph.json');     % prefix without "_" now
 
     elseif length(json_test) == 1
-        % if with single-echo
+        % if with single-echo OR with eDICOM data
         num_echo = 1;
         json_list_ph = json_test;
         filename_prefix_phase = extractBefore(json_list_ph(1).name, '_ph.json');  % prefix without "_"
@@ -86,6 +92,13 @@ for nifti_ii = 1:length(nifti_dirs)
         img_phase = img_phase./phase_range*(2*pi);
     end
 
+    % check num_echo in case of eDICOM data
+    if size(img_phase, 4) > num_echo
+        flag_eDICOM = 1;
+    else
+        flag_eDICOM = 0;    % default
+    end
+
     % find longest common prefix & save
     for prefix_i = 1:length(filename_prefix_mag)
         prefix_pat = filename_prefix_mag(1:prefix_i);
@@ -115,30 +128,50 @@ for nifti_ii = 1:length(nifti_dirs)
     Params.nifti_hdr.dime.pixdim(5) = 0;
     Params.nifti_hdr.dime.dim(1) = 3;
 
-    % read TE from json file
-    json_list = dir(fullfile(nifti_dir, [filename_prefix_phase, '*_ph.json']));
-    json_filenames = cell(length(json_list), 1);
-    for json_ii = 1:length(json_list)
-        json_filenames{json_ii} = fullfile(json_list(json_ii).folder, json_list(json_ii).name);
+    if flag_eDICOM > 0
+        % read Params.TEs/B0/TR from eDICOM
+        [~, dicomheader] = dicomeread(dcm_name);
+        Params_temp = [];
+        Params_temp = readparamsfromdicom(dicomheader, Params_temp);
+        Params.TEs = Params_temp.TEs;
+        Params.TR = Params_temp.TR;
+        Params.B0 = Params_temp.B0;
+
+    else
+        % read TE from json file
+        json_list = dir(fullfile(nifti_dir, [filename_prefix_phase, '*_ph.json']));
+        json_filenames = cell(length(json_list), 1);
+        for json_ii = 1:length(json_list)
+            json_filenames{json_ii} = fullfile(json_list(json_ii).folder, json_list(json_ii).name);
+        end
+        Params.TEs = readTE_dcm2niix_JSON(json_filenames);
+
+        % read other params from json file, B0, TR etc.
+        Params = readParams_dcm2niix_JSON(json_filenames{1}, Params);
     end
-    Params.TEs = readTE_dcm2niix_JSON(json_filenames);
+
     Params.nEchoes = length(Params.TEs);
-
-    % read other params from json file, B0, TR etc.
-    Params = readParams_dcm2niix_JSON(json_filenames{1}, Params);
-
     Params.sizeVol = nii_phase.hdr.dime.dim(2:4);  % 2-4, pixdim, 5:echoes, 6:dynamics?
     Params.voxSize = nii_phase.hdr.dime.pixdim(2:4);
     Params.fov = Params.sizeVol.*Params.voxSize;
     Params.nDynamics = nii_phase.hdr.dime.dim(6);  % need check 
 
     [Params.b0dir, Params.TAng] = get_B0_dir_from_nifti(nii_phase);
+    % in case we got complex number
+    Params.TAng = real(Params.TAng);
+    Params.b0dir = real(Params.b0dir);
 
     % par/rec to NIFTI test, convert to LAS, b0 needs correction
     if parrecflag == 1
        disp('usning NIFTI file converted from par/rec, check with caution...')
        negz = diag([1, 1, -1]);   %
        Params.b0dir = negz*Params.b0dir; Params.TAng = Params.TAng*negz;
+    end
+
+    if flag_eDICOM > 0
+       disp('usning NIFTI file converted from enhanced DICOM, check with caution...')
+       negxz = diag([-1, 1, -1]);   %
+       Params.b0dir = negxz*Params.b0dir; Params.TAng = Params.TAng*negxz;
     end
 
     % save header .mat file
