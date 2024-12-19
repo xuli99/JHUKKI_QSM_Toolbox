@@ -309,7 +309,10 @@ switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod}
     case {'Laplacian'}
         % do nothing
     case {'Path'}
-        handles.phase_quality_map = phase_quality_map;
+        if exist("phase_quality_map", "var")
+            % for compatibility
+            handles.phase_quality_map = phase_quality_map;
+        end
     case {'NonlinearFit + Path'}
         handles.DPWeight        = DPWeight;
     case {'ROMEO'}
