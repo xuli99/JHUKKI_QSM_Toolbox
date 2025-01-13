@@ -176,9 +176,9 @@ end
 
 % -------------------- if AutoRef
 if Params.AutoRefFlag == 1
-    GREMagSegFile = [Params.FileBaseName, '_brain_mixeltype.nii.gz'];             % old version
-    GREMagSegFile2 = [Params.FileBaseName, '_GREMag1_brain_mixeltype.nii.gz'];    % new version
-    GREMagSegFile3 = [Params.FileBaseName, '_Seg_brain_mixeltype.nii.gz'];        % other option
+    GREMagSegFile = [Params.FileBaseName, '_brain_seg.nii.gz'];             % old version
+    GREMagSegFile2 = [Params.FileBaseName, '_GREMag1_brain_seg.nii.gz'];    % new version
+    GREMagSegFile3 = [Params.FileBaseName, '_Seg_brain_seg.nii.gz'];        % other option
 
     CSFmaskFileFlag = 0;
     CSFmaskFile = [];
@@ -443,7 +443,8 @@ else
                     [CSFmask1] = CSFmaskThresh(R2starMap, lambdaSet.R2sThresh, maskErode, Params.voxSize);                
                     
                     if (exist('GREMagSeg', 'var') == 1)
-                        CSFmask2 = (GREMagSeg == 0) & maskErode;
+                        % CSFmask2 = (GREMagSeg == 0) & maskErode;
+                        CSFmask2 = (GREMagSeg == 1) & maskErode;
                         disp('updating CSF mask based on R2* with FSL Segmentation')
                         % --- Good choice if with small ventricles (e.g. in RLS study),
                         % use with caution for other cases
