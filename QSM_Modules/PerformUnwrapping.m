@@ -11,6 +11,7 @@
 % Updated 2023-10-09 X.L., adding template unwrapping for path-based method 
 % Updated 2024-06-01 X.L., added phase_quality_map for path-based method 
 % Updated 2024-06-24 X.L., added RefVox check for path-based method to increase robustness
+% Updated 2025-01-18 X.L., bug fix
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -210,17 +211,20 @@ else
                     GREPhase_Ref(echo_ind) = GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind, dynamic_ind);
                 end
                 
-                % Adjust RefVox in cases of large jump (e.g. in veins) to avoid potential Error
-                while abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi && all(RefVox(1:2) < floor(N(1:2)*0.6))
-                    shiftstep = 3;  % in-slice shift
-                    RefVox(1) = RefVox(1) + shiftstep;
-                    RefVox(2) = RefVox(2) + shiftstep;
-                    GREPhase_Ref = squeeze(GREPhase(RefVox(1), RefVox(2), RefVox(3), :, dynamic_ind));
-                end
-
-                if abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi
-                    % adjustment not successfuly
-                    disp('RefVox may be problemetic.')
+                if nEchoes > 1
+                    % Adjust RefVox in cases of large jump (e.g. in veins) to avoid potential Error
+                    % only for multi-echo data
+                    while abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi && all(RefVox(1:2) < floor(N(1:2)*0.6))
+                        shiftstep = 3;  % in-slice shift
+                        RefVox(1) = RefVox(1) + shiftstep;
+                        RefVox(2) = RefVox(2) + shiftstep;
+                        GREPhase_Ref = squeeze(GREPhase(RefVox(1), RefVox(2), RefVox(3), :, dynamic_ind));
+                    end
+    
+                    if abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi
+                        % adjustment not successfuly
+                        disp('RefVox may be problemetic.')
+                    end
                 end
 
                 for echo_ind = 1:nEchoes
