@@ -12,6 +12,7 @@
 % Updated 2023-04-04 X.L., added ROMEO option for cluster version
 % Updated 2023-06-12, X.L., added wsl support for pc
 % Updated 2024-06-01, X.L., added phase_quality_map option for path-based method
+% Updated 2025-02-20, X.L., skip maskIntrinsic for dual-echo
 
 %% Get variables
 Params      = handles.Params;
@@ -188,7 +189,7 @@ else
 %             maskErode = permute(nii.img, [2,1,3]); maskErode=maskErode>0;            
                         
             % MaskOut Unreliable Phase
-            if Params.nEchoes > 1    
+            if Params.nEchoes > 2    
                 temp = GREPhaseRaw(:,:,:,:,1);  
                 mask_intrinsic = (sum(abs(temp - min(temp(:))) < 10*eps, 4) >= (Params.nEchoes-1)); % air/bone mask
             else

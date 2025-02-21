@@ -26,6 +26,7 @@ function Params = readParams_dcm2niix_JSON(filename, Params)
         Params.B0 = value_json.MagneticFieldStrength;   % in Tesla
     end
     
-    Params.TR = value_json.RepetitionTime;          % in sec
-
+    if isfield(value_json, 'RepetitionTime')
+        Params.TR = value_json.RepetitionTime;          % in sec
+    end
 end
