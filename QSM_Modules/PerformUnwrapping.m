@@ -285,6 +285,12 @@ else
 
     end
     
+    %%%% In case of phase shift correction, for Bruker 
+    if isfield(Params, 'PhaseShiftCorr')
+        disp('Correcting phase shift in Phase Images ...')
+        GREPhase = circshift(GREPhase, Params.PhaseShiftCorr);
+    end
+
     % save data
     switch Params.UnwrappingMethodsDict{Params.UnwrappingMethod} 
         case {'Laplacian'}

@@ -408,16 +408,26 @@ else
             edgePer = 3*0.3;    % Edge voxel percentage
             merit = 1;          % fine tuning
             
-            for dynamic_ind = 1:Params.nDynamics
-                
-                [chi_res(:,:,:,1,dynamic_ind), regv, datav] = ...
-                    delta2chi_MEDI(deltaB(:,:,:,1,dynamic_ind), Params, DPWeight(:,:,:,1,dynamic_ind), maskErode, lambda, merit, edgePer);  
-                if ~isfield(handles.Params, 'cluster')  % GUI only
-                    hasCanceled = multiWaitbar(textWaitbar, (dynamic_ind/Params.nDynamics));
-                    HandleStopReconstruction;               
+            if isfield(Params, 'QSM_MEDIlambda_sweep')
+                lambda_sweep = Params.QSM_MEDIlambda_sweep;
+                % if lambda_sweep = 1, lambda is a vector of lambda to search & test
+            else
+                lambda_sweep = 0;  % default
+            end
+
+            if lambda_sweep == 1
+                chi_res(:,:,:,1,1) = MEDI_sweep(deltaB(:,:,:,1,1), Params, DPWeight(:,:,:,1,1), maskErode, lambda, merit, edgePer, outputFile);
+            else
+                for dynamic_ind = 1:Params.nDynamics
+                    [chi_res(:,:,:,1,dynamic_ind), regv, datav] = ...
+                        delta2chi_MEDI(deltaB(:,:,:,1,dynamic_ind), Params, DPWeight(:,:,:,1,dynamic_ind), maskErode, lambda, merit, edgePer);  
+                    if ~isfield(handles.Params, 'cluster')  % GUI only
+                        hasCanceled = multiWaitbar(textWaitbar, (dynamic_ind/Params.nDynamics));
+                        HandleStopReconstruction;               
+                    end
                 end
             end
-            
+
         case {'SFCR'}          %% modifed SFCR, SFCR+0
             % padding
             padsize = [0, 0, 0];
@@ -546,7 +556,8 @@ else
                     [CSFmask1] = CSFmaskThresh(R2starMap, nSFCRparams.R2sThresh, maskErode, Params.voxSize);                
 
                     if (exist('GREMagSeg', 'var') == 1)
-                        CSFmask2 = (GREMagSeg == 0) & maskErode;
+                        % CSFmask2 = (GREMagSeg == 0) & maskErode;
+                        CSFmask2 = (GREMagSeg == 1) & maskErode;
                         disp('updating CSF mask based on R2* with FSL Segmentation')
                         CSFmask1 = R2starMap < nSFCRparams.R2sThresh;
                     else
@@ -557,7 +568,8 @@ else
                     
                 else
                     if (exist('GREMagSeg', 'var') == 1)
-                        CSFmask = (GREMagSeg == 0) & maskErode;
+                        % CSFmask = (GREMagSeg == 0) & maskErode;
+                        CSFmask = (GREMagSeg == 1) & maskErode;
                         disp('loading CSF mask from FSL Segmentation')
                         
                         GREMag  = handles.GREMag;

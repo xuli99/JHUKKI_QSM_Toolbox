@@ -15,6 +15,7 @@ function [SMVdata, background] = SHARP_Adaptive_Multi2D(GREPhaseSE, mask, radius
 % Modified to 2D version, 2017-04-03, 2D version does not use waitbar thus
 % no need input handles
 % Updated by Xu Li, 2019-07-03
+% Updated X.L., 2025-07-08, bug fix
 
 warning off all
 
@@ -147,8 +148,6 @@ for selectedEcho = 1:size(GREPhaseData,4)
     temp = fftn(data_interm(:,:,:, selectedEcho))./Hk;    % tsvd
     temp(mask_reg) = 0;
     SMVdata(:,:,:,selectedEcho) = real(ifftn(temp));
-    
-    SMVdata(:,:,:,selectedEcho) = temp(1:Ny, 1:Nx);
     
     %% Applying the mask
     SMVdata(:,:,:,selectedEcho) = SMVdata(:,:,:,selectedEcho).*mask;
