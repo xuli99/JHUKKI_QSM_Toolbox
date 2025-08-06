@@ -14,6 +14,7 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag, dcm_name)
 
 % 2024-03-21, X.L., for SIEMENS data with diff series number for mag vs. phase
 % 2024-04-23, X.L., bug fix for naming convention prefix
+% 2025-07-31, X.L., bug fix for .nii vs .nii.gz
 
 if nargin < 2
     cleanup = 0;        % default no cleanup
@@ -68,16 +69,24 @@ for nifti_ii = 1:length(nifti_dirs)
     end
 
     % magnitude & phase
+    test_filename = dir(fullfile(nifti_dir, [filename_prefix_phase, '*.nii*']));
+    [~, ~, ext_test] = fileparts(test_filename(1).name);
+    if contains(ext_test, '.gz')
+        ext = '.nii.gz';
+    else
+        ext = '.nii';
+    end
+
     img_mag     = [];
     img_phase   = [];
 
     for kecho = 1:num_echo
         if num_echo > 1
-            curr_echo_mag_filename      = strcat(filename_prefix_mag, '_e', num2str(kecho),'.nii.gz');
-            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_e', num2str(kecho),'_ph.nii.gz');
+            curr_echo_mag_filename      = strcat(filename_prefix_mag, '_e', num2str(kecho),ext);
+            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_e', num2str(kecho),'_ph', ext);
         else
-            curr_echo_mag_filename      = strcat(filename_prefix_mag, '.nii.gz'); % prefix without "_"
-            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_ph.nii.gz');
+            curr_echo_mag_filename      = strcat(filename_prefix_mag, ext); % prefix without "_"
+            curr_echo_phase_filename    = strcat(filename_prefix_phase, '_ph', ext);
         end
 
         img_mag     = cat(4,img_mag, load_nii_img_only(fullfile(nifti_dir,curr_echo_mag_filename)));
@@ -185,15 +194,15 @@ for nifti_ii = 1:length(nifti_dirs)
         if num_echo > 1
             % if multi-echo
             delete(fullfile(nifti_dir, [filename_prefix_mag, '_e*.json']));
-            delete(fullfile(nifti_dir, [filename_prefix_mag, '_e*.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_mag, '_e*', ext]));
             delete(fullfile(nifti_dir, [filename_prefix_phase, '_e*.json']));
-            delete(fullfile(nifti_dir, [filename_prefix_phase, '_e*.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_e*', ext]));
         else
             % if single-echo
             delete(fullfile(nifti_dir, [filename_prefix_mag, '.json']));
-            delete(fullfile(nifti_dir, [filename_prefix_mag, '.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_mag, ext]));
             delete(fullfile(nifti_dir, [filename_prefix_phase, '_ph.json']));
-            delete(fullfile(nifti_dir, [filename_prefix_phase, '_ph.nii.gz']));
+            delete(fullfile(nifti_dir, [filename_prefix_phase, '_ph', ext]));
         end
 
     end
