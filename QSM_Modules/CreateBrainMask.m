@@ -13,6 +13,7 @@
 % Updated 2023-06-12, X.L., added wsl support for pc
 % Updated 2024-06-01, X.L., added phase_quality_map option for path-based method
 % Updated 2025-02-20, X.L., skip maskIntrinsic for dual-echo
+% Updated 2025-12-08, X.L., update for dynamic data
 
 %% Get variables
 Params      = handles.Params;
@@ -231,11 +232,11 @@ else
                     end
 
                     if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'ROMEO')
-                        mask_unrelyPhase = mask_unrelyPhase | (handles.phase_quality_map < Params.romeo_phasequality_thresh); 
+                        mask_unrelyPhase = mask_unrelyPhase | sum(handles.phase_quality_map < Params.romeo_phasequality_thresh, 4) > 1; % sum over dynamics
                     end
 
                     if strcmp(Params.UnwrappingMethodsDict{Params.UnwrappingMethod}, 'Path') && isfield(Params, 'phasequality_thresh')
-                        mask_unrelyPhase = mask_unrelyPhase | (handles.phase_quality_map < Params.phasequality_thresh); 
+                        mask_unrelyPhase = mask_unrelyPhase | sum(handles.phase_quality_map < Params.phasequality_thresh, 4) > 1; % sum over dynamics
                     end
 
                     if isfield(Params, 'maskHs')

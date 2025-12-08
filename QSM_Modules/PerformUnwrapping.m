@@ -12,6 +12,7 @@
 % Updated 2024-06-01 X.L., added phase_quality_map for path-based method 
 % Updated 2024-06-24 X.L., added RefVox check for path-based method to increase robustness
 % Updated 2025-01-18 X.L., bug fix
+% Updated 2025-12-08, X.L., update for dual-echo with large deltaTE
 
 %% Perform Phase Unwrapping
 % Remove open waitbars!
@@ -211,9 +212,9 @@ else
                     GREPhase_Ref(echo_ind) = GREPhase(RefVox(1), RefVox(2), RefVox(3), echo_ind, dynamic_ind);
                 end
                 
-                if nEchoes > 1
+                if nEchoes > 1 && (Params.TEs(2) - Params.TEs(1) < 0.01)
                     % Adjust RefVox in cases of large jump (e.g. in veins) to avoid potential Error
-                    % only for multi-echo data
+                    % only for multi-echo data with short deltaTE (< 10 ms), not for dual-echo sequence with large delta-TE
                     while abs(GREPhase_Ref(2) - GREPhase_Ref(1)) > pi && all(RefVox(1:2) < floor(N(1:2)*0.6))
                         shiftstep = 3;  % in-slice shift
                         RefVox(1) = RefVox(1) + shiftstep;

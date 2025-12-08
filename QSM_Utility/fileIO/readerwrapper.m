@@ -18,6 +18,7 @@ function [GREMag, GREPhase, Params, handles] = readerwrapper(PathName, FileName,
 % updated 2023-05-07, added nifti support, nifti combined from dcm2niix
 %                       output, see GRE_preparation_2nifti.m
 % updated 2023-09-13, updated file requirements for nifti format
+% Updated 2025-12-08, X.L., update for eDICOM data with dynamic scans
 
 [~,FileBaseName,FileExt] = fileparts(FileName);
 
@@ -83,11 +84,14 @@ elseif(sum(strcmpi(FileExt,{'.DIC';'.IMA';'.DICOM'; '.dcm'; '.1'; ''})) > 0) && 
         Params = readparamsfromdicom(dicomheader, handles.Params);    
         [Params.PathName, Params.FileBaseName, ~] = fileparts([PathName, FileName]);
 
-        ndimsGREdataAll = ndims(GREdataAll);
-        if ndimsGREdataAll == 5
-            GREdataAll = permute(GREdataAll ,[1,2,3,5,4]);  % 3D x imagetype x echoes
-            GREMag = GREdataAll(:,:,:,:,1);     % if multi-echo, Magnitude
-            GREPhase = GREdataAll(:,:,:,:,2);   % Phase
+        ndimsGREdataAll = ndims(GREdataAll); % eDICOM: ncol,nrow,nslice,type,ndynamics,echo
+        % mat: ncol,nrow,nslice,echo,ndynamics
+        if ndimsGREdataAll == 6
+            GREMag = permute(squeeze(GREdataAll(:,:,:,1,:,:)), [1,2,3,5,4]);     % if multi-echo, Magnitude
+            GREPhase = permute(squeeze(GREdataAll(:,:,:,2,:,:)), [1,2,3,5,4]);   % Phase
+        elseif ndimsGREdataAll == 5
+            GREMag = squeeze(GREdataAll(:,:,:,1,:));     % if multi-echo, Magnitude
+            GREPhase = squeeze(GREdataAll(:,:,:,2,:));   % Phase
         elseif ndimsGREdataAll == 4
             GREMag = GREdataAll(:,:,:,1);       
             GREPhase = GREdataAll(:,:,:,2);
