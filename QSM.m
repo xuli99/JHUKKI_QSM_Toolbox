@@ -238,19 +238,21 @@ function figure1_ResizeFcn(hObject, eventdata, handles)
 % hObject    handle to figure1 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
-jFrame = get(hObject, 'JavaFrame');
-try
-  jProx = jFrame.fFigureClient.getWindow;
-catch
-  % jProx = jFrame.fHG1Client.getWindow;  % [EDITED] Fallback % obsolete  
-end
-% Now try the setting
-try
-    jProx.setMinimumSize(java.awt.Dimension(1250, 900));
-catch
-    % Nothing
-end
+% JavaFrame removed and causing error after MATLAB 2025b Upgrade
+% Move to App Designer new GUI in next update 
+% % warning('off','MATLAB:HandleGraphics:ObsoletedProperty:JavaFrame');
+% % jFrame = get(hObject, 'JavaFrame');
+% % try
+% %   jProx = jFrame.fFigureClient.getWindow;
+% % catch
+% %   % jProx = jFrame.fHG1Client.getWindow;  % [EDITED] Fallback % obsolete  
+% % end
+% % % Now try the setting
+% % try
+% %     jProx.setMinimumSize(java.awt.Dimension(1250, 900));
+% % catch
+% %     % Nothing
+% % end
 
 % --- Executes on selection change in VarUnwrappingMethod.
 function VarUnwrappingMethod_Callback(hObject, eventdata, handles)
@@ -307,7 +309,7 @@ QSMSolverDict   = cellstr(get(handles.VarQSMSolver, 'String'));
 QSMSolver       = get(handles.VarQSMSolver,'Value');
 R2starFlag      = get(hObject, 'Value');
 
-if R2starFlag == 1 && contains(QSMSolverDict(QSMSolver), 'SFCR')
+if R2starFlag == 1 && contains(QSMSolverDict(QSMSolver), ["SFCR", "MEDI"])
     set([handles.checkboxAutoRef], 'Visible', 'On')
 else
     set([handles.checkboxAutoRef], 'Visible', 'Off')
@@ -328,7 +330,7 @@ contents = cellstr(get(hObject,'String'));
 % set method combinations
 % if ~SFCR --> no AutoRef
 % if SFCR + R2* --> AutoRef available
-if ~contains(contents{get(hObject,'Value')}, 'SFCR')
+if ~contains(contents{get(hObject,'Value')}, ["SFCR", "MEDI"])
     set([handles.checkboxAutoRef], 'Visible', 'Off')
     set([handles.checkboxAutoRef], 'Value', 0)
 else

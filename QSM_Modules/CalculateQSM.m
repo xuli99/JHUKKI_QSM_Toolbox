@@ -15,6 +15,7 @@
 % Updated 2024-05-28, X.L., fixed weighting bug for MEDI
 % Updated 2024-06-06, X.L., fixed QSMSettingsFile problem for cluster array 
 % Updated 2024-10-03, X.L., added option for load CSF mask 
+% Updated 2025-12-10, X.L., merged AutoRef code & added MEDI+0
 
 %% Get variables
 Params      = handles.Params;
@@ -132,7 +133,7 @@ if Params.R2starFlag == 1
         disp('fast done.')
         
         if isfield(handles.Params, 'cluster')  % cluster only
-            writelog(handles.logfile, ['FSL FAST Done. \n']);
+            writelog(handles.logfile, 'FSL FAST Done. \n');
         end
         clear BETFilename FASTFilename BrainMaskFilename
     end
@@ -229,9 +230,56 @@ if Params.AutoRefFlag == 1
         nii = load_untouch_nii(CSFmaskFile);
         % for RAS NIFTI
         nii = nii_img_update(nii, Params);        
-        CSFmask1 = cast(permute(nii.img, [2,1,3]), 'double');
-        CSFmask1 = CSFmask1 > 0;
+        CSFmask2 = cast(permute(nii.img, [2,1,3]), 'double');
+        CSFmask2 = CSFmask2 > 0;
     end
+end
+
+% ------------- Get AutoRef CSFmask before QSM dipole inversion (SFCR or MEDI) 
+if Params.AutoRefFlag == 1 && contains(Params.QSMSolverDict{Params.QSMSolver}, ["SFCR", "MEDI"])
+    if (exist('R2starMap', 'var') == 1)
+        % Use R2* to get CSFmask1
+        Params.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
+        [CSFmask1] = CSFmaskThresh(R2starMap, Params.R2sThresh, maskErode, Params.voxSize);                
+        
+        if (exist('GREMagSeg', 'var') == 1)
+            CSFmask2 = (GREMagSeg == 1) & maskErode; % GREMagSeg from FSL segmentation
+            disp('updating CSF mask based on R2* with FSL Segmentation')
+            % update with all CSF regions with small R2* including
+            % peripheral CSF
+            CSFmask1 = R2starMap < Params.R2sThresh;
+        else
+            CSFmask2 = maskErode;
+        end
+        % final CSFmask
+        CSFmask = CSFmask1 & CSFmask2;
+    elseif CSFmaskFileFlag == 1
+        % directly loaded
+        CSFmask = CSFmask2;
+
+    elseif (exist('GREMagSeg', 'var') == 1)
+        % tested for ARIC 2D single echo nSFCR
+        CSFmask2 = (GREMagSeg == 1) & maskErode;
+        disp('loading CSF mask from FSL Segmentation')
+        maskExclude = GREMag < median(GREMag(GREMagSeg > 0)); % T2/T2* based for Heme OR Cal not seen in T1 with low T2 signal for ARIC data
+        CSFmask = CSFmask2.*~maskExclude;
+
+    else
+        disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
+        if isfield(handles.Params, 'cluster')  % if cluster version, skip the current case and continue
+            disp('For cluster version, skip the current case and continue ...')
+            writelog(handles.logfile, 'AutoRef Error, no R2* or CSF mask. QSM Skipped. \n');
+            handles = UpdateTable(handles, 'Error with AutoRef. Skipped.');
+            return
+        end
+
+    end
+    
+    % general check for CSFmask as AutoRef region
+    if nnz(CSFmask) < 100
+        warning('CSFmask too small; be careful using AutoRef for this case.');
+    end
+    
 end
 
 % ----------------------
@@ -274,7 +322,7 @@ switch Params.QSMSolverDict{Params.QSMSolver}
 end
 
 %% determin output file name
-if Params.AutoRefFlag == 1 && contains(Params.QSMSolverDict{Params.QSMSolver}, ['SFCR'])
+if Params.AutoRefFlag == 1 && contains(Params.QSMSolverDict{Params.QSMSolver}, ["SFCR", "MEDI"])
     StringApp1 = ['_chi_', Params.QSMSolverDict{Params.QSMSolver}, '+0'];
     WaitBarMsgloading = [Params.QSMSolverDict{Params.QSMSolver}, '+0'];
 else
@@ -408,6 +456,11 @@ else
             edgePer = 3*0.3;    % Edge voxel percentage
             merit = 1;          % fine tuning
             
+            if (Params.AutoRefFlag == 1)
+                Params.maskRef = CSFmask;        % Final CSFmask
+                Params.lambdaRef = lambda/5;    % lambda for AutoRef
+            end
+
             if isfield(Params, 'QSM_MEDIlambda_sweep')
                 lambda_sweep = Params.QSM_MEDIlambda_sweep;
                 % if lambda_sweep = 1, lambda is a vector of lambda to search & test
@@ -447,42 +500,10 @@ else
             lambdaSet.lambda2_S = 0;
             
             if (Params.AutoRefFlag == 1)
-                if (exist('R2starMap', 'var') == 1)
-                    % Use R2* to get CSF masking
-                    lambdaSet.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
-                    [CSFmask1] = CSFmaskThresh(R2starMap, lambdaSet.R2sThresh, maskErode, Params.voxSize);                
-                    
-                    if (exist('GREMagSeg', 'var') == 1)
-                        % CSFmask2 = (GREMagSeg == 0) & maskErode;
-                        CSFmask2 = (GREMagSeg == 1) & maskErode;
-                        disp('updating CSF mask based on R2* with FSL Segmentation')
-                        % --- Good choice if with small ventricles (e.g. in RLS study),
-                        % use with caution for other cases
-                        CSFmask1 = R2starMap < lambdaSet.R2sThresh;
-    
-                    else
-                        CSFmask2 = maskErode;
-                    end
-                    lambdaSet.maskSS = CSFmask1 & CSFmask2;
-                    lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
-                    lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
-
-                elseif CSFmaskFileFlag == 1
-                    lambdaSet.maskSS = CSFmask1;
-                    lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
-                    lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
-
-                else
-                    disp('No R2* map or CSF mask, cannot do AutoRef to CSF.')
-                    if isfield(handles.Params, 'cluster')  % if cluster version, skip the current case and continue
-                        disp('For cluster version, skip the current case and continue ...')
-                        writelog(handles.logfile, 'AutoRef Error, no R2* or CSF mask. QSM Skipped. \n');
-                        handles = UpdateTable(handles, 'Error with AutoRef. Skipped.');
-                        return
-                    end
-
-                end
-
+                lambdaSet.R2sThresh = Params.R2sThresh;   % Copying Parameter
+                lambdaSet.maskSS = CSFmask;        % Final CSFmask
+                lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
+                lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
             end
             
             deltaB = padarray(deltaB, padsize);
@@ -551,37 +572,9 @@ else
             nSFCRparams.maskRef = maskErode;
             
             if (Params.AutoRefFlag == 1) 
-                if exist('R2starMap', 'var') == 1
-                    nSFCRparams.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
-                    [CSFmask1] = CSFmaskThresh(R2starMap, nSFCRparams.R2sThresh, maskErode, Params.voxSize);                
-
-                    if (exist('GREMagSeg', 'var') == 1)
-                        % CSFmask2 = (GREMagSeg == 0) & maskErode;
-                        CSFmask2 = (GREMagSeg == 1) & maskErode;
-                        disp('updating CSF mask based on R2* with FSL Segmentation')
-                        CSFmask1 = R2starMap < nSFCRparams.R2sThresh;
-                    else
-                        CSFmask2 = maskErode;
-                    end
-                    nSFCRparams.maskRef = CSFmask1 & CSFmask2;
-                    nSFCRparams.lambda2 = 0.5;               
-                    
-                else
-                    if (exist('GREMagSeg', 'var') == 1)
-                        % CSFmask = (GREMagSeg == 0) & maskErode;
-                        CSFmask = (GREMagSeg == 1) & maskErode;
-                        disp('loading CSF mask from FSL Segmentation')
-                        
-                        GREMag  = handles.GREMag;
-                        maskExclude = GREMag < median(GREMag(GREMagSeg > 0)); % T2/T2* based for Heme OR Cal not seen in T1 with low T2 signal
-                        CSFmask = CSFmask.*~maskExclude;
-                        clear GREMag    
-                    end
-
-                    nSFCRparams.maskRef = CSFmask;
-                    nSFCRparams.lambda2 = 0.5;               
-                end
-
+                nSFCRparams.R2sThresh = Params.R2sThresh;   % Copying Parameters
+                nSFCRparams.maskRef = CSFmask;
+                nSFCRparams.lambda2 = 0.5;
             end
             
             for dynamic_ind = 1:Params.nDynamics
@@ -785,9 +778,17 @@ else
     % option to save the final QSM mask
     if isfield(Params, 'SaveQSMmask')
         if Params.SaveQSMmask == 1
-            saveNII(maskErode.*1, [outputFile, '_QSMmask'], Params, 1);
+            saveNII(uint8(maskErode), [outputFile, '_QSMmask'], Params, 1, '.nii.gz', 2);
         end
     end
+    
+    % option to save the CSFmask used in AutoRef    
+    if Params.AutoRefFlag == 1 && contains(Params.QSMSolverDict{Params.QSMSolver}, ["SFCR", "MEDI"])
+        if isfield(Params, 'SaveAutoRefMask')
+            saveNII(uint8(CSFmask>0), [outputFile, '_AutoRefMask'], Params, 1, '.nii.gz', 2);
+        end
+    end
+
 end
 
 % Save

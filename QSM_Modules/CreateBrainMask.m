@@ -349,7 +349,7 @@ else
             save([outputFile '.mat'], 'maskErode')
 
             % Save NIFTI
-            saveNII(maskErode.*1, outputFile, Params, 1);    
+            saveNII(uint8(maskErode), outputFile, Params, 1, '.nii.gz', 2);    
             clear maskBET1 maskBET2 maskBET nii
             
             if ~isfield(handles.Params, 'cluster')  % GUI only
@@ -413,7 +413,7 @@ else
         save([outputFile '.mat'], 'maskErode')
 
         % Save NIFTI
-        saveNII(maskErode.*1, outputFile, Params, 1); 
+        saveNII(uint8(maskErode), outputFile, Params, 1, '.nii.gz', 2); 
 
         % Mark that we made new mask and so we need to do new BG/QSM
         handles.Params.MaskWasMade = 1;

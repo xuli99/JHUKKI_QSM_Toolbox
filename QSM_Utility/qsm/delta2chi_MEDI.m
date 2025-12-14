@@ -18,6 +18,7 @@ function [x, cost_reg_history, cost_data_history] =  delta2chi_MEDI(deltaB, Para
 % Acosta-Cabronero J et. al, Neuroimage 2018
 % 2021-09-15, X.L. bug fix
 % 2024, X.L. parameter fix
+% 2025, Z.X. & X.L. added AutoRef option as in MEDI+0
 
 %%%%%%%%%%%%%%% weights definition %%%%%%%%%%%%%%
 if nargin < 5
@@ -60,6 +61,24 @@ if smv_rad > 0
     deltaB = real(ifftn(SMV.*fftn(deltaB))).*Mask;
 end
 
+% CSF prior
+use_csf = false;  % default
+if isfield(Params,'maskRef') && ~isempty(Params.maskRef) && any(Params.maskRef(:))
+    % Ensure logical and confined to brain mask
+    Mask_CSF = logical(Params.maskRef) & logical(Mask);
+    if nnz(Mask_CSF) >= 50   % minimal safety
+        use_csf = true;
+        if isfield(Params,'lambdaRef') && ~isempty(Params.lambdaRef)
+            lambda_CSF = Params.lambdaRef;
+        else
+            lambda_CSF = lambda/5;   % sensible default;
+        end
+    else
+        warning('Mask_CSF too small; CSF prior disabled in this run.');
+    end
+end
+
+
 % b0 and weighting
 b0 = m.*exp(1i*deltaB);                         % change RDF to deltaB in ppm
 wG = gradient_mask(gradient_weighting_mode, m, Mask, grad, Params.voxSize, edgePer);
@@ -79,16 +98,22 @@ tic
     Vr = 1./sqrt(abs(wG.*grad(real(x),Params.voxSize)).^2+e);       % 1/abs(M*G*x_n)
     
     % complex
-    w = m.*exp(1i*real(ifftn(D.*fftn(x))));                           % w: W*exp(i*D*x_n)
+    w = m.*exp(1i*real(ifftn(D.*fftn(x))));                          % w: W*exp(i*D*x_n)
     
     % regularization term
     reg = @(dx) div(wG.*(Vr.*(wG.*grad(real(dx),Params.voxSize))),Params.voxSize);  
-    
+
+    % CSF quadratic prior: lambda_CSF * ||x_CSF - x_mean_CSF||^2
+    if use_csf
+        reg_CSF  = @(v) lambda_CSF.*Mask_CSF.*( v - mean(v(Mask_CSF)) );
+        reg = @(dx) reg(dx) + reg_CSF(real(dx));
+    end
+
     % data fidelity term
     fidelity = @(dx)2*lambda*real(ifftn(D.*fftn(conj(w).*w.*real(ifftn(D.*fftn(dx))))));
 
     A =  @(dx) reg(dx) + fidelity(dx);       
-    b = reg(x) + 2*lambda*real(ifftn(D.*fftn( conj(w).*conj(1i).*(w-b0))));
+    b = reg(x) + 2*lambda*real(ifftn(D.*fftn( conj(w).*conj(1i).*(w-b0)))); 
 
     dx = real(cgsolve(A, -b, cg_tol, cg_max_iter, 10));      % CG solver, solve A*dx = b
     res_norm_ratio = norm(dx(:))/norm(x(:));
@@ -97,9 +122,8 @@ tic
     wres=m.*exp(1i*(real(ifftn(D.*fftn(x))))) - b0;         % weighted residual, should be small
 
     cost_data_history(iter) = norm(wres(:),2);
-    cost=abs(wG.*grad(x));
+    cost = abs(wG.*grad(x));
     cost_reg_history(iter) = sum(cost(:));
-
     
     if merit
         wres = wres - mean(wres(Mask(:)==1));   % unbias
@@ -117,6 +141,11 @@ tic
     fprintf('iter: %d; res_norm_ratio:%8.4f; cost_L2:%8.4f; cost_Reg:%8.4f.\n',iter, res_norm_ratio,cost_data_history(iter), cost_reg_history(iter));
 toc
     
+end
+
+% hard CSF zero reference
+if use_csf
+    x = x - mean(x(Mask_CSF));
 end
 
 x = x.*Mask;
