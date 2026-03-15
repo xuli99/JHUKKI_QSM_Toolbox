@@ -1,5 +1,5 @@
-function [ CSFmask] =CSFmaskThresh(dataMap, thresh, maskBrain, voxSize)
-%[ CSFmask ] =CSFmaskThresh(dataMap, thresh, maskBrain)
+function [ CSFmask] =CSFmaskThresh(dataMap, thresh, maskBrain, voxSize, numRegionComb)
+%[ CSFmask ] =CSFmaskThresh(dataMap, thresh, maskBrain, voxSize, numRegionComb)
 %   Get the central CSF mask based on threshold and maskBrain if available
 %   Updated 2018-04-09, X.L. make it to handle bad R2* data
 %  Ref: Liu et al., 2018 79(5):2795-2803
@@ -8,6 +8,12 @@ function [ CSFmask] =CSFmaskThresh(dataMap, thresh, maskBrain, voxSize)
 if nargin < 3
     maskBrain = ones(size(dataMap));
     voxSize = [1,1,1];
+    numRegionComb = 3;
+elseif nargin < 4
+    voxSize = [1,1,1];
+    numRegionComb = 3;
+elseif nargin < 5
+    numRegionComb = 3;
 end
 
 % maskflag = 1;       % default using maskflag
@@ -53,7 +59,7 @@ numPixels = cellfun(@numel, cc6mask.PixelIdxList);
 
 % Pick the largest regions and combine
 CSFmask0 = zeros(size(dataMask));
-numRegionComb = 3;      % 2 or 3, depending on R2* quality
+% numRegionComb = 3;      % 2 or 3, depending on R2* quality
 for iiRegion = 1:numRegionComb
     CSFmask0(cc6mask.PixelIdxList{I(iiRegion)}) = 1;
 end
