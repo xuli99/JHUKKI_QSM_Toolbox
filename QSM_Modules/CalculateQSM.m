@@ -501,7 +501,7 @@ else
             lambdaSet.lambda2_S = 0;
             
             if (Params.AutoRefFlag == 1)
-                lambdaSet.R2sThresh = Params.R2sThresh;   % Copying Parameter
+                % lambdaSet.R2sThresh = Params.R2sThresh;   % Copying Parameter
                 lambdaSet.maskSS = CSFmask;        % Final CSFmask
                 lambdaSet.lambda2_M = lambdaSet.lambda1_M./5;
                 lambdaSet.lambda2_S = lambdaSet.lambda1_S./5;
@@ -573,7 +573,7 @@ else
             nSFCRparams.maskRef = maskErode;
             
             if (Params.AutoRefFlag == 1) 
-                nSFCRparams.R2sThresh = Params.R2sThresh;   % Copying Parameters
+                % nSFCRparams.R2sThresh = Params.R2sThresh;   % Copying Parameters
                 nSFCRparams.maskRef = CSFmask;
                 nSFCRparams.lambda2 = 0.5;
             end
