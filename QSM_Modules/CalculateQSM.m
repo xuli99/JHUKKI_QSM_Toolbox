@@ -16,6 +16,7 @@
 % Updated 2024-06-06, X.L., fixed QSMSettingsFile problem for cluster array 
 % Updated 2024-10-03, X.L., added option for load CSF mask 
 % Updated 2025-12-10, X.L., merged AutoRef code & added MEDI+0
+% Updated 2026-03-15, X.L., bug fix
 
 %% Get variables
 Params      = handles.Params;
@@ -237,7 +238,7 @@ end
 
 % ------------- Get AutoRef CSFmask before QSM dipole inversion (SFCR or MEDI) 
 if Params.AutoRefFlag == 1 && contains(Params.QSMSolverDict{Params.QSMSolver}, ["SFCR", "MEDI"])
-    if (exist('R2starMap', 'var') == 1)
+    if (exist('R2starMap', 'var') == 1) && (CSFmaskFileFlag == 0)
         % Use R2* to get CSFmask1
         Params.R2sThresh = 5;        % 5 Hz for extracting central CSF region for automatic CSF referencing               
         [CSFmask1] = CSFmaskThresh(R2starMap, Params.R2sThresh, maskErode, Params.voxSize);                
