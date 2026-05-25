@@ -16,7 +16,8 @@ function GRE_preparation_2nifti(dcm, output_dir, cleanup)
 %                   dcm2niix may have phase scaling problem, need to check
 
 if ismac
-    dcm2niix_path = '/Users/lixu/opt/anaconda3/bin/';
+    % dcm2niix_path = '/Users/lixu/opt/anaconda3/bin/';
+    dcm2niix_path = '/opt/homebrew/bin/';
 else
     dcm2niix_path = '/usr/local/bin/';
 end

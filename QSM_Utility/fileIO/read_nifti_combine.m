@@ -15,6 +15,7 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag, dcm_name)
 % 2024-03-21, X.L., for SIEMENS data with diff series number for mag vs. phase
 % 2024-04-23, X.L., bug fix for naming convention prefix
 % 2025-07-31, X.L., bug fix for .nii vs .nii.gz
+% 2026-05-25, X.L., phase range check update
 
 if nargin < 2
     cleanup = 0;        % default no cleanup
@@ -98,7 +99,8 @@ for nifti_ii = 1:length(nifti_dirs)
     phase_range = max(img_phase(:)) - min(img_phase(:));
     if phase_range > 2*pi + 100*eps
         disp('correct phase scaling ...')
-        img_phase = img_phase./phase_range*(2*pi);
+        % img_phase = img_phase./phase_range*(2*pi);
+        img_phase = (img_phase - min(img_phase(:)))./phase_range*(2*pi) - pi;
     end
 
     % check num_echo in case of eDICOM data
