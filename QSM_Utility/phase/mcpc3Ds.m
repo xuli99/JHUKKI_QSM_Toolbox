@@ -14,6 +14,7 @@ function [GREPhase, GREMag] = mcpc3Ds(GREMag, GREPhase, Params)
 % output GREPhase, GREMag are 6D array
 % Updated 2021-09-23
 % Updated 2022-03-23, X.L., updated smoothing kernel
+% Updated 2026-07-30, X.L., bug fix
 
 sizedim = size(GREPhase);
 if ndims(GREPhase) == 8
@@ -65,7 +66,7 @@ end
 if mod(TEs(1), dTE) ~= 0
     % do unwrapping on DeltaThetaKJ
     for IndDyn = 1:Nd
-        DeltaThetaKJ(:,:,:,1,IndDyn) = phase_unwrap_path_mex(DeltaThetaKJ(:,:,:,1,IndDyn));
+        [DeltaThetaKJ(:,:,:,1,IndDyn), ~] = phase_unwrap_path_mex(DeltaThetaKJ(:,:,:,1,IndDyn));
     end
 end
 Phi0 = angle(exp(1i*GREPhase(:,:,:,1,:,:)).*exp(-1i*TEs(1)/dTE*DeltaThetaKJ));
