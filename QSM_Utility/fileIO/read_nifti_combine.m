@@ -16,6 +16,7 @@ function read_nifti_combine(nifti_dirs, cleanup, parrecflag, dcm_name)
 % 2024-04-23, X.L., bug fix for naming convention prefix
 % 2025-07-31, X.L., bug fix for .nii vs .nii.gz
 % 2026-05-25, X.L., phase range check update
+% 2026-10-08, X.L., bug fix for 10 echoes or more
 
 if nargin < 2
     cleanup = 0;        % default no cleanup
@@ -50,7 +51,10 @@ for nifti_ii = 1:length(nifti_dirs)
     
         json_list_ph = dir(fullfile(nifti_dir, '*_e*_ph.json')); 
         num_echo = length(json_list_ph);
-        filename_prefix_phase = extractBefore(json_list_ph(1).name, '_e1_ph.json');     % prefix without "_" now
+        
+        % in case echo number >= 10 
+        json_list_ph1 = dir(fullfile(nifti_dir, '*_e1_ph.json')); 
+        filename_prefix_phase = extractBefore(json_list_ph1(1).name, '_e1_ph.json');     % prefix without "_" now
 
     elseif length(json_test) == 1
         % if with single-echo OR with eDICOM data
